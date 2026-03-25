@@ -103,6 +103,7 @@ final class AppModel: ObservableObject {
                 initialSource: source,
                 tokenStore: tokenStore,
                 tokenProvider: tokenProvider,
+                authResolver: resolver,
                 onSourceChange: { [weak self] source in
                     self?.activeSourceLabel = source.sourceLabel
                     self?.authMessage = source.connectionStatusLabel
@@ -177,17 +178,20 @@ private final class AuthFallbackUsageService: UsageService {
     private var source: AuthSource
     private let tokenStore: TokenStore
     private let tokenProvider: AccessTokenProviding
+    private let authResolver: AuthResolver
     private let onSourceChange: (AuthSource) -> Void
 
     init(
         initialSource: AuthSource,
         tokenStore: TokenStore,
         tokenProvider: AccessTokenProviding,
+        authResolver: AuthResolver,
         onSourceChange: @escaping (AuthSource) -> Void
     ) {
         self.source = initialSource
         self.tokenStore = tokenStore
         self.tokenProvider = tokenProvider
+        self.authResolver = authResolver
         self.onSourceChange = onSourceChange
     }
 
@@ -195,21 +199,24 @@ private final class AuthFallbackUsageService: UsageService {
         do {
             return try await usageClient(for: source).fetchUsage()
         } catch UsageClientError.unauthorized {
-            guard case .localAuthFile = source,
-                  let oauthAccessToken = try tokenStore.loadAccessToken(account: KeychainTokenStore.defaultAccount),
-                  !oauthAccessToken.isEmpty
-            else {
-                throw UsageClientError.unauthorized
+            if let nextSource = authResolver.resolveNextSource(after: source) {
+                source = nextSource
+                onSourceChange(nextSource)
+                return try await usageClient(for: nextSource).fetchUsage()
             }
 
-            let oauthSource = AuthSource.oauthKeychain(
-                service: KeychainTokenStore.serviceName,
-                account: KeychainTokenStore.defaultAccount
-            )
-            source = oauthSource
-            onSourceChange(oauthSource)
+            if let oauthAccessToken = try tokenStore.loadAccessToken(account: KeychainTokenStore.defaultAccount),
+               !oauthAccessToken.isEmpty {
+                let oauthSource = AuthSource.oauthKeychain(
+                    service: KeychainTokenStore.serviceName,
+                    account: KeychainTokenStore.defaultAccount
+                )
+                source = oauthSource
+                onSourceChange(oauthSource)
+                return try await usageClient(for: oauthSource).fetchUsage()
+            }
 
-            return try await usageClient(for: oauthSource).fetchUsage()
+            throw UsageClientError.unauthorized
         }
     }
 

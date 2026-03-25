@@ -121,7 +121,7 @@ struct MenuContentView: View {
     }
 
     private var shouldShowInitialLoading: Bool {
-        coordinator.state.snapshot == nil && !model.isSignedOut
+        coordinator.state.snapshot == nil && !model.isSignedOut && coordinator.state.lastError == nil
     }
 
     private var loadingStateView: some View {

@@ -21,6 +21,14 @@ public struct AuthDiscovery {
         return .oauthKeychain(service: KeychainTokenStore.serviceName, account: KeychainTokenStore.defaultAccount)
     }
 
+    public func resolveNextAvailable(excludingPath: String) -> AuthSource? {
+        let paths = candidatePaths()
+        for path in paths where path != excludingPath && fileManager.fileExists(atPath: path) {
+            return .localAuthFile(path: path)
+        }
+        return nil
+    }
+
     private func candidatePaths() -> [String] {
         let home = environment["HOME", default: NSHomeDirectory()]
 
@@ -63,6 +71,15 @@ public struct AuthResolver {
                 return .oauthKeychain(service: service, account: account)
             }
             return .oauthKeychain(service: service, account: account)
+        }
+    }
+
+    public func resolveNextSource(after source: AuthSource) -> AuthSource? {
+        switch source {
+        case let .localAuthFile(path):
+            return discovery.resolveNextAvailable(excludingPath: path)
+        case .oauthKeychain:
+            return nil
         }
     }
 }
