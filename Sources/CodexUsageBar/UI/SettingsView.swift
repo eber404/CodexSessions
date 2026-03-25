@@ -6,35 +6,47 @@ struct SettingsView: View {
     @State private var refreshMinutes: Int = 5
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                sectionBlock(title: "Refresh Interval (minutes)") {
-                    Picker("Refresh Interval (minutes)", selection: $refreshMinutes) {
-                        Text("1 min").tag(1)
-                        Text("3 min").tag(3)
-                        Text("5 min").tag(5)
-                    }
-                    .pickerStyle(.segmented)
-                    .onChange(of: refreshMinutes) { _, newValue in
-                        model.refreshIntervalSeconds = TimeInterval(newValue * 60)
-                        model.updateRefreshInterval()
-                    }
+        VStack(alignment: .leading, spacing: 0) {
+            sectionBlock(title: "Refresh Interval (minutes)") {
+                Picker("", selection: $refreshMinutes) {
+                    Text("1 min").tag(1)
+                    Text("3 min").tag(3)
+                    Text("5 min").tag(5)
                 }
-
-                Divider()
-                    .padding(.horizontal, 2)
-                    .opacity(0.7)
-
-                sectionBlock(title: "System") {
-                    Toggle("Launch at login", isOn: $launchAtLogin)
-                        .onChange(of: launchAtLogin) { _, enabled in
-                            LoginItemManager().setEnabled(enabled)
-                        }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .onChange(of: refreshMinutes) { _, newValue in
+                    model.refreshIntervalSeconds = TimeInterval(newValue * 60)
+                    model.updateRefreshInterval()
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+
+            Divider()
+                .padding(.horizontal, 2)
+                .opacity(0.7)
+
+            sectionBlock(title: "System") {
+                Toggle("Launch at login", isOn: $launchAtLogin)
+                    .onChange(of: launchAtLogin) { _, enabled in
+                        LoginItemManager().setEnabled(enabled)
+                    }
+            }
+
+            Divider()
+                .padding(.horizontal, 2)
+                .opacity(0.7)
+
+            HStack {
+                Spacer(minLength: 0)
+                Button("Logout") {
+                    model.logout()
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.vertical, 12)
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
         .onAppear {
             launchAtLogin = LoginItemManager().isEnabled
             let minutes = Int(model.refreshIntervalSeconds / 60)

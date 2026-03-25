@@ -71,7 +71,8 @@ final class MenuBarController {
         let window = NSWindow(contentViewController: hosting)
         window.title = "CodexSessions Settings"
         window.styleMask = [.titled, .closable, .miniaturizable]
-        window.setContentSize(NSSize(width: 520, height: 360))
+        window.setContentSize(NSSize(width: 440, height: 230))
+        window.minSize = NSSize(width: 440, height: 230)
         window.isReleasedWhenClosed = false
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
