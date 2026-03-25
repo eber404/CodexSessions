@@ -12,7 +12,14 @@ let package = Package(
     ],
     targets: [
         .target(name: "CodexUsageCore"),
-        .executableTarget(name: "CodexSessions", dependencies: ["CodexUsageCore"], path: "Sources/CodexUsageBar"),
+        .executableTarget(
+            name: "CodexSessions",
+            dependencies: ["CodexUsageCore"],
+            path: "Sources/CodexUsageBar",
+            linkerSettings: [
+                .unsafeFlags(["-Xlinker", "-interposable"], .when(configuration: .debug)),
+            ]
+        ),
         .testTarget(name: "CodexUsageCoreTests", dependencies: ["CodexUsageCore"]),
     ]
 )

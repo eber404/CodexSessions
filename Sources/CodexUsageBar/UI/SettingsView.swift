@@ -13,7 +13,7 @@ struct SettingsView: View {
                     Button("Apply Source") {
                         model.rebuildServiceAndRefresh()
                     }
-                    Button("Connect with OpenAI (Codex-compatible)") {
+                    Button("Signin with OpenAI") {
                         model.connectOAuth()
                     }
                     Button("Disconnect OAuth") {

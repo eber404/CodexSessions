@@ -33,6 +33,13 @@ swift test
 swift run CodexSessions
 ```
 
+## Hot Reload (InjectionIII)
+
+- Install app: `/Applications/InjectionIII.app` (version `5.1.0` installed locally).
+- Debug builds already load `macOSInjection.bundle` on startup.
+- Debug linker flags already include `-Xlinker -interposable`.
+- In Xcode 16.3+, add `EMIT_FRONTEND_COMMAND_LINES=YES` in Debug build settings.
+
 ## OAuth notes
 
 The OAuth flow is optional and experimental. To enable it, set:

@@ -11,7 +11,14 @@ The app prioritizes fast visual feedback and minimal setup.
 - Menu bar first UX (no complex dashboard in v1).
 - Auth priority order:
   1. Local auth files (Codex/OpenCode)
-  2. In-app OpenAI OAuth fallback
+  2. Codex-compatible OpenAI OAuth fallback
+
+## Product behavior
+
+- Show usage as percentage (0% to 100%) for short and weekly windows.
+- Keep menu actions simple, full-width, and quick to scan.
+- Show Signin action only when user is effectively logged out.
+- Keep refresh explicit and immediate from the menu.
 
 ## High-level architecture
 
@@ -30,16 +37,18 @@ The app prioritizes fast visual feedback and minimal setup.
 
 - Keep last known usage snapshot on transient failures.
 - Treat API schema changes as parser responsibilities, not UI failures.
-- Prefer explicit source labeling (`local auth` vs `oauth`).
+- Force real refresh requests (avoid stale cached responses).
 
 ## Security posture
 
 - Never commit tokens or copied cookie headers.
 - Store app-managed OAuth credentials in macOS Keychain.
 - Keep credentials handling isolated in core auth components.
+- Prefer logout behavior that clears in-app auth state immediately.
 
 ## Developer workflow
 
 - Use tests as the guardrail for parser/auth behavior.
 - Keep UI simple and focused on quick status read.
 - Favor incremental, low-risk changes to auth and parsing paths.
+- Validate with `swift test` and `swift build` before closing work.

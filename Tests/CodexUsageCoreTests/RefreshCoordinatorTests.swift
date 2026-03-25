@@ -54,6 +54,30 @@ final class RefreshCoordinatorTests: XCTestCase {
 
         XCTAssertGreaterThan(secondRefresh, firstRefresh)
     }
+
+    func testClearStateRemovesSnapshotAndRefreshMetadata() async throws {
+        let now = Date(timeIntervalSince1970: 3000)
+        let snapshot = UsageSnapshot(
+            accountEmail: "user@example.com",
+            sourceLabel: "local",
+            windows: [
+                UsageWindow(kind: .shortWindow, label: "Daily", used: 10, limit: 100, resetAt: now.addingTimeInterval(3600)),
+            ],
+            fetchedAt: now
+        )
+
+        let coordinator = RefreshCoordinator(service: StubUsageService(result: .success(snapshot)))
+        await coordinator.refreshNow()
+
+        XCTAssertNotNil(coordinator.state.snapshot)
+        XCTAssertNotNil(coordinator.state.lastRefreshAt)
+
+        coordinator.clearState()
+
+        XCTAssertNil(coordinator.state.snapshot)
+        XCTAssertNil(coordinator.state.lastRefreshAt)
+        XCTAssertNil(coordinator.state.lastError)
+    }
 }
 
 private struct StubUsageService: UsageService {

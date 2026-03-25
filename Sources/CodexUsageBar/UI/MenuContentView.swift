@@ -12,9 +12,11 @@ struct MenuContentView: View {
                 Text("CodexSessions")
                     .font(.headline)
                 Spacer()
-                Text(model.activeSourceLabel)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                if model.coordinator.state.snapshot != nil {
+                    Text("Updated: \(updatedLabel(primary: model.lastManualRefreshAt ?? model.coordinator.state.lastRefreshAt, fallback: model.coordinator.state.snapshot?.fetchedAt))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             if let snapshot = model.coordinator.state.snapshot {
@@ -26,9 +28,6 @@ struct MenuContentView: View {
                     windowRow(window)
                 }
 
-                Text("Updated: \(updatedLabel(primary: model.lastManualRefreshAt ?? model.coordinator.state.lastRefreshAt, fallback: snapshot.fetchedAt))")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
             } else {
                 Text(model.coordinator.state.lastError ?? "No usage data yet")
                     .font(.caption)
@@ -43,19 +42,33 @@ struct MenuContentView: View {
 
             Divider()
 
-            HStack {
-                Button("Refresh") {
-                    model.refreshNow()
-                }
-                Button("Connect OAuth") {
-                    model.connectOAuth()
-                }
-                Button("Settings") {
-                    showSettings()
-                }
-                Spacer()
-                Button("Quit") {
-                    NSApp.terminate(nil)
+            VStack(alignment: .leading, spacing: 3) {
+                if model.isSignedOut {
+                    menuActionButton("Signin with OpenAI") {
+                        model.connectOAuth()
+                    }
+                } else {
+                    menuActionButton("Refresh") {
+                        model.refreshNow()
+                    }
+
+                    menuActionButton("Settings") {
+                        showSettings()
+                    }
+
+                    if shouldShowSignInButton {
+                        menuActionButton("Signin with OpenAI") {
+                            model.connectOAuth()
+                        }
+                    }
+
+                    menuActionButton("Logout") {
+                        model.logout()
+                    }
+
+                    menuActionButton("Quit") {
+                        NSApp.terminate(nil)
+                    }
                 }
             }
         }
@@ -82,11 +95,59 @@ struct MenuContentView: View {
         }
     }
 
-    private func updatedLabel(primary: Date?, fallback: Date) -> String {
-        let date = primary ?? fallback
+    private func updatedLabel(primary: Date?, fallback: Date?) -> String {
+        guard let date = primary ?? fallback else { return "--:--:--" }
         let formatter = DateFormatter()
         formatter.locale = .current
         formatter.dateFormat = "HH:mm:ss.SSS"
         return formatter.string(from: date)
+    }
+
+    private var shouldShowSignInButton: Bool {
+        model.isSignedOut || (model.coordinator.state.snapshot == nil && model.coordinator.state.lastError != nil)
+    }
+
+    @ViewBuilder
+    private func menuActionButton(_ title: String, action: @escaping () -> Void) -> some View {
+        menuActionButton(content: { Text(title) }, action: action)
+    }
+
+    @ViewBuilder
+    private func menuActionButton<Content: View>(@ViewBuilder content: () -> Content, action: @escaping () -> Void) -> some View {
+        HoverMenuRowButton(action: action) {
+            content()
+        }
+    }
+}
+
+private struct HoverMenuRowButton<Content: View>: View {
+    let action: () -> Void
+    let content: Content
+
+    @State private var isHovering = false
+
+    init(action: @escaping () -> Void, @ViewBuilder content: () -> Content) {
+        self.action = action
+        self.content = content()
+    }
+
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                content
+                    .foregroundStyle(.primary)
+                Spacer(minLength: 0)
+            }
+            .padding(.vertical, 7)
+            .padding(.horizontal, 10)
+            .contentShape(Rectangle())
+            .background(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(isHovering ? Color.primary.opacity(0.12) : Color.clear)
+            )
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovering = $0 }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
