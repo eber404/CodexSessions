@@ -5,6 +5,7 @@ final class SessionKeepAliveTests: XCTestCase {
     func testStartDoesNotPingWhenDisabled() async throws {
         let mockClient = MockChatCompletionClient()
         let keepAlive = SessionKeepAlive(client: mockClient)
+        await keepAlive.configure(isEnabled: false, firstHour: 9)
         await keepAlive.start(accessToken: "test-token")
         try await Task.sleep(nanoseconds: 100_000_000)
         await keepAlive.stop()
@@ -18,7 +19,7 @@ final class SessionKeepAliveTests: XCTestCase {
         await keepAlive.start(accessToken: "test-token")
         try await Task.sleep(nanoseconds: 100_000_000)
         await keepAlive.stop()
-        XCTAssertTrue(mockClient.pingCount >= 0)
+        XCTAssertEqual(mockClient.pingCount, 0)
     }
 
     func testCancellationStopsTask() async throws {
