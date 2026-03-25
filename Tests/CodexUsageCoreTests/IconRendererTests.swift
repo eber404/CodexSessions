@@ -41,4 +41,18 @@ final class IconRendererTests: XCTestCase {
         XCTAssertEqual(trackRings[0].radius, progressRings[0].radius)
         XCTAssertEqual(trackRings[1].radius, progressRings[1].radius)
     }
+
+    func testIconRendererRotatesRingsWhileLoading() {
+        let model = IconRendererModel(
+            shortProgress: 0.5,
+            weeklyProgress: 0.5,
+            isStale: false,
+            isLoading: true,
+            rotationDegrees: -45
+        )
+        let rings = IconRenderer().ringLayout(for: model)
+
+        XCTAssertEqual(rings[0].startAngle, -135)
+        XCTAssertEqual(rings[1].startAngle, -135)
+    }
 }

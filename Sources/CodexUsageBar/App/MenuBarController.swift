@@ -10,6 +10,8 @@ final class MenuBarController {
     private let popover = NSPopover()
     private var settingsWindow: NSWindow?
     private var cancellables: Set<AnyCancellable> = []
+    private var loadingAnimationTimer: Timer?
+    private var loadingRotationDegrees: Double = 0
 
     init(model: AppModel) {
         self.model = model
@@ -30,7 +32,8 @@ final class MenuBarController {
 
         model.coordinator.$state
             .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
+            .sink { [weak self] state in
+                self?.syncLoadingAnimation(isLoading: state.isLoading)
                 self?.updateIcon()
             }
             .store(in: &cancellables)
@@ -61,9 +64,34 @@ final class MenuBarController {
         let iconModel = IconRendererModel(
             shortProgress: short?.usedRatio ?? 0,
             weeklyProgress: weekly?.usedRatio ?? 0,
-            isStale: state.isStale
+            isStale: state.isStale,
+            isLoading: state.isLoading,
+            rotationDegrees: loadingRotationDegrees
         )
         statusItem.button?.image = IconRenderer().makeImage(for: iconModel)
+    }
+
+    private func syncLoadingAnimation(isLoading: Bool) {
+        guard isLoading else {
+            loadingAnimationTimer?.invalidate()
+            loadingAnimationTimer = nil
+            loadingRotationDegrees = 0
+            return
+        }
+
+        guard loadingAnimationTimer == nil else { return }
+        loadingAnimationTimer = Timer.scheduledTimer(withTimeInterval: 0.08, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            self.loadingRotationDegrees -= 18
+            if self.loadingRotationDegrees <= -360 {
+                self.loadingRotationDegrees += 360
+            }
+            self.updateIcon()
+        }
+        loadingAnimationTimer?.tolerance = 0.02
+        if let loadingAnimationTimer {
+            RunLoop.main.add(loadingAnimationTimer, forMode: .common)
+        }
     }
 
     private func showSettings() {
