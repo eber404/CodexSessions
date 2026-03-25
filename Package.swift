@@ -20,7 +20,7 @@ let package = Package(
                 .unsafeFlags(["-Xlinker", "-interposable"], .when(configuration: .debug)),
             ]
         ),
-        .testTarget(name: "CodexUsageCoreTests", dependencies: ["CodexUsageCore"]),
+        .testTarget(name: "CodexUsageCoreTests", dependencies: ["CodexUsageCore", "CodexSessions"]),
         .testTarget(name: "CodexSessionsTests", dependencies: ["CodexSessions"]),
     ]
 )
