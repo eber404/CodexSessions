@@ -4,6 +4,7 @@ import SwiftUI
 
 struct MenuContentView: View {
     @ObservedObject var model: AppModel
+    @ObservedObject var coordinator: RefreshCoordinator
     let showSettings: () -> Void
 
     var body: some View {
@@ -12,9 +13,9 @@ struct MenuContentView: View {
                 Text("CodexSessions")
                     .font(.headline)
                 Spacer()
-                if model.coordinator.state.snapshot != nil {
+                if coordinator.state.snapshot != nil {
                     HStack(spacing: 6) {
-                        Text("Updated at \(updatedLabel(primary: model.lastManualRefreshAt ?? model.coordinator.state.lastRefreshAt, fallback: model.coordinator.state.snapshot?.fetchedAt))")
+                        Text("Updated at \(updatedLabel(primary: model.lastManualRefreshAt ?? coordinator.state.lastRefreshAt, fallback: coordinator.state.snapshot?.fetchedAt))")
                             .font(.caption)
                             .foregroundStyle(.secondary)
 
@@ -31,7 +32,7 @@ struct MenuContentView: View {
                 }
             }
 
-            if let snapshot = model.coordinator.state.snapshot {
+            if let snapshot = coordinator.state.snapshot {
                 Text(snapshot.accountEmail ?? "No account email")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -41,9 +42,13 @@ struct MenuContentView: View {
                 }
 
             } else {
-                Text(model.coordinator.state.lastError ?? "No usage data yet")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                if shouldShowInitialLoading {
+                    loadingStateView
+                } else {
+                    Text(coordinator.state.lastError ?? "No usage data yet")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             if let message = model.authMessage {
@@ -58,6 +63,10 @@ struct MenuContentView: View {
                 if model.isSignedOut {
                     menuActionButton("Signin with OpenAI") {
                         model.connectOAuth()
+                    }
+
+                    menuActionButton("Quit") {
+                        NSApp.terminate(nil)
                     }
                 } else {
                     menuActionButton("Settings") {
@@ -108,7 +117,22 @@ struct MenuContentView: View {
     }
 
     private var shouldShowSignInButton: Bool {
-        model.isSignedOut || (model.coordinator.state.snapshot == nil && model.coordinator.state.lastError != nil)
+        model.isSignedOut || (coordinator.state.snapshot == nil && coordinator.state.lastError != nil)
+    }
+
+    private var shouldShowInitialLoading: Bool {
+        coordinator.state.snapshot == nil && !model.isSignedOut
+    }
+
+    private var loadingStateView: some View {
+        HStack(spacing: 8) {
+            ProgressView()
+                .controlSize(.small)
+            Text("Connecting to OpenAI...")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 2)
     }
 
     @ViewBuilder
