@@ -5,6 +5,14 @@ struct SettingsView: View {
     @ObservedObject var model: AppModel
     let onLogout: () -> Void
     @State private var refreshMinutes: Int = 5
+    @State private var scheduler = SessionScheduler()
+    @State private var timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.timeStyle = .short
+        return f
+    }()
+
+    private static let hoursInDay: ClosedRange<Double> = 0...23
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -58,21 +66,16 @@ struct SettingsView: View {
                                 get: { Double(model.firstHour) },
                                 set: { model.setFirstHour(Int($0)) }
                             ),
-                            in: 0...23,
+                            in: Self.hoursInDay,
                             step: 1
                         )
+                        .accessibilityLabel("First hour of day")
 
-                        let scheduler = SessionScheduler()
                         let blocks = scheduler.calculateTimelineBlocks(firstHour: model.firstHour)
                         SessionTimelineView(blocks: blocks, firstHour: model.firstHour)
 
                         let nextPing = scheduler.calculateNextPing(firstHour: model.firstHour)
-                        let formatter: DateFormatter = {
-                            let f = DateFormatter()
-                            f.timeStyle = .short
-                            return f
-                        }()
-                        Text("Next ping: \(formatter.string(from: nextPing))")
+                        Text("Next ping: \(timeFormatter.string(from: nextPing))")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
