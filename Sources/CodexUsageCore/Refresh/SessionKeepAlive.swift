@@ -25,9 +25,7 @@ public actor SessionKeepAlive {
         task = Task { [weak self] in
             guard let self else { return }
 
-            if let waitTime {
-                try? await Task.sleep(nanoseconds: UInt64(waitTime * 1_000_000_000))
-            }
+            try? await Task.sleep(nanoseconds: UInt64(waitTime * 1_000_000_000))
 
             guard !Task.isCancelled else { return }
 
@@ -43,13 +41,17 @@ public actor SessionKeepAlive {
         task = nil
     }
 
-    private func timeUntilFirstHour() -> TimeInterval? {
+    public var isRunning: Bool {
+        task != nil && !task!.isCancelled
+    }
+
+    private func timeUntilFirstHour() -> TimeInterval {
         let calendar = Calendar.current
         let now = Date()
         let currentHour = calendar.component(.hour, from: now)
 
         var hoursUntil = self.firstHour - currentHour
-        if hoursUntil <= 0 {
+        if hoursUntil < 0 {
             hoursUntil += 24
         }
 
