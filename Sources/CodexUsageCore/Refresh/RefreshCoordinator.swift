@@ -3,12 +3,14 @@ import Foundation
 
 public struct RefreshState: Sendable {
     public var snapshot: UsageSnapshot?
+    public var lastRefreshAt: Date?
     public var isLoading: Bool
     public var isStale: Bool
     public var lastError: String?
 
-    public init(snapshot: UsageSnapshot? = nil, isLoading: Bool = false, isStale: Bool = false, lastError: String? = nil) {
+    public init(snapshot: UsageSnapshot? = nil, lastRefreshAt: Date? = nil, isLoading: Bool = false, isStale: Bool = false, lastError: String? = nil) {
         self.snapshot = snapshot
+        self.lastRefreshAt = lastRefreshAt
         self.isLoading = isLoading
         self.isStale = isStale
         self.lastError = lastError
@@ -48,6 +50,7 @@ public final class RefreshCoordinator: ObservableObject {
     }
 
     public func refreshNow() async {
+        state.lastRefreshAt = Date()
         state.isLoading = true
         do {
             let snapshot = try await service.fetchUsage()
