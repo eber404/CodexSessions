@@ -12,8 +12,9 @@ public struct SessionTimelineView: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Timeline de hoje")
+        let endHour = firstHour + 24
+        return VStack(alignment: .leading, spacing: 8) {
+            Text("Today's timeline")
                 .font(.caption)
                 .foregroundColor(.secondary)
 
@@ -24,7 +25,7 @@ public struct SessionTimelineView: View {
                         Rectangle()
                             .fill(block.isNext ? Color.green : Color.blue.opacity(0.6))
                             .frame(height: 24)
-                            .cornerRadius(4)
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
 
                         Text(block.label)
                             .font(.system(size: 8))
@@ -34,17 +35,17 @@ public struct SessionTimelineView: View {
             }
 
             HStack {
-                Text("00")
+                Text(String(format: "%02d", firstHour))
                     .font(.system(size: 8))
                     .foregroundColor(.secondary)
                 Spacer()
-                Text("24")
+                Text(String(format: "%02d", endHour))
                     .font(.system(size: 8))
                     .foregroundColor(.secondary)
             }
         }
         .padding()
         .background(Color(nsColor: .controlBackgroundColor))
-        .cornerRadius(8)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }
