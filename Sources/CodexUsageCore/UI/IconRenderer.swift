@@ -8,11 +8,21 @@ public struct IconRendererModel: Sendable {
     public var shortProgress: Double
     public var weeklyProgress: Double
     public var isStale: Bool
+    public var isLoading: Bool
+    public var rotationDegrees: Double
 
-    public init(shortProgress: Double, weeklyProgress: Double, isStale: Bool) {
+    public init(
+        shortProgress: Double,
+        weeklyProgress: Double,
+        isStale: Bool,
+        isLoading: Bool = false,
+        rotationDegrees: Double = 0
+    ) {
         self.shortProgress = shortProgress
         self.weeklyProgress = weeklyProgress
         self.isStale = isStale
+        self.isLoading = isLoading
+        self.rotationDegrees = rotationDegrees
     }
 }
 
@@ -45,7 +55,8 @@ public struct IconRenderer {
     public init() {}
 
     public func ringLayout(for model: IconRendererModel) -> [IconRing] {
-        let startAngle = -90.0
+        let baseStartAngle = -90.0
+        let startAngle = baseStartAngle + (model.isLoading ? model.rotationDegrees : 0)
         let maxSweep = 300.0
         let minSweep = 14.0
 
@@ -72,6 +83,19 @@ public struct IconRenderer {
         ]
     }
 
+    public func trackLayout(for model: IconRendererModel) -> [IconRing] {
+        ringLayout(for: model).map { ring in
+            IconRing(
+                name: ring.name,
+                radius: ring.radius,
+                lineWidth: ring.lineWidth,
+                startAngle: ring.startAngle,
+                sweepAngle: ring.maxSweep,
+                maxSweep: ring.maxSweep
+            )
+        }
+    }
+
 #if canImport(AppKit)
     public func makeImage(for model: IconRendererModel, size: CGFloat = 18) -> NSImage {
         let image = NSImage(size: NSSize(width: size, height: size))
@@ -81,9 +105,26 @@ public struct IconRenderer {
         NSBezierPath(rect: NSRect(x: 0, y: 0, width: size, height: size)).fill()
 
         let color = model.isStale ? NSColor.secondaryLabelColor : NSColor.labelColor
-        color.setStroke()
+        let trackColor = color.withAlphaComponent(model.isStale ? 0.35 : 0.18)
 
         let center = NSPoint(x: size / 2, y: size / 2)
+
+        trackColor.setStroke()
+        for ring in trackLayout(for: model) {
+            let path = NSBezierPath()
+            path.appendArc(
+                withCenter: center,
+                radius: CGFloat(ring.radius),
+                startAngle: CGFloat(ring.startAngle),
+                endAngle: CGFloat(ring.startAngle - ring.sweepAngle),
+                clockwise: true
+            )
+            path.lineWidth = CGFloat(ring.lineWidth)
+            path.lineCapStyle = .round
+            path.stroke()
+        }
+
+        color.setStroke()
 
         for ring in ringLayout(for: model) {
             let path = NSBezierPath()
