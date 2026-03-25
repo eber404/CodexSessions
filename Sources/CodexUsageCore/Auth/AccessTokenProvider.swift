@@ -94,6 +94,12 @@ public struct AccessTokenProvider: AccessTokenProviding {
             return token
         }
 
+        if let tokens = dictionary["tokens"] as? [String: Any],
+           let token = tokens["access_token"] as? String,
+           !token.isEmpty {
+            return token
+        }
+
         throw AccessTokenProviderError.missingAccessToken
     }
 }

@@ -2,7 +2,12 @@
 
 All notable changes to CodexSessions are documented in this file.
 
-## [1.0.1] - Unreleased
+## [1.0.2] - 2026-03-25
+
+### Fixed
+- Fixed Codex CLI auth file parsing to recognize `tokens.access_token` structure, resolving stuck "Connecting..." state for Codex CLI users.
+
+## [1.0.1] - 2026-03-25
 
 ### Added
 - Persisted user settings for refresh interval and launch-at-login across app restarts.
