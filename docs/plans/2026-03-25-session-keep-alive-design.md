@@ -1,114 +1,167 @@
-# Session Keep-Alive Design
+# Session Keep-Alive Configurável - Design
 
 ## Overview
 
-Add a background keep-alive mechanism that sends "oi" via Chat Completions API every 5 hours to maintain active Codex sessions.
+Funcionalidade de keep-alive configurável pelo usuário que envia "oi" via Chat Completions API a cada 5 horas para manter sessões ativas. O usuário ativa/desativa, escolhe a primeira hora do dia, e visualiza os intervalos em uma timeline.
 
-## Motivation
+## Requisitos
 
-Prevent session windows from expiring due to inactivity. The existing app only monitors usage but doesn't interact with the API to keep sessions alive.
+1. **Toggle on/off** - keep-alive só funciona se usuário ativar
+2. **Hora inicial configurável** - slider 0-23h para escolher primeira hora do dia
+3. **Timeline visual** - mostrar intervalos de 5h ao longo do dia
+4. **Funciona 24h contínuo** - ciclos de 5h ininterruptos
 
-## Architecture
+## Configurações (Settings)
 
 ```
+┌─────────────────────────────────────┐
+│ Session Keep-Alive                   │
+│ ┌─────────────────────────────────┐ │
+│ │ [Toggle: Ativar/Desativar]      │ │
+│ └─────────────────────────────────┘ │
+│                                     │
+│ Primeira hora do dia: 09:00         │
+│ [0────────────●──────────23]        │
+│                                     │
+│ Timeline de hoje:                    │
+│ │████│     │████│     │████│     │  │
+│ 00   05   10   15   20   24        │
+│       ▲                          ▲  │
+│      [09:00]                   [04:00]│
+│                                     │
+│ Próximo envio: 09:00 (em 2h 30min) │
+└─────────────────────────────────────┘
+```
+
+## Lógica de Intervalos
+
+- Primeira hora define o primeiro envio do dia (ex: 09:00)
+- Ciclos: 09:00, 14:00, 19:00, 00:00, 05:00, 10:00...
+- Funciona 24h contínuo, reinicia no próximo dia na hora configurada
+
+Exemplo com primeira hora 09:00:
+| Intervalo | Horário |
+|-----------|---------|
+| 1 | 09:00 |
+| 2 | 14:00 |
+| 3 | 19:00 |
+| 4 | 00:00 (dia seguinte) |
+| 5 | 05:00 |
+| 6 | 10:00 |
+
+## Arquitetura
+
+```
+SettingsView
+├── KeepAliveToggle (Toggle)
+├── FirstHourSlider (Slider 0-23)
+└── SessionTimelineView
+    ├── Timeline blocks (blocos de 5h)
+    └── NextPingIndicator
+
 AppModel
-├── RefreshCoordinator (usage: 1-5 min intervals)
-│   └── UsageClient → /backend-api/wham/usage
-└── SessionKeepAlive (5 hours)
-    └── ChatCompletionClient → /v1/chat/completions
+├── keepAliveEnabled: Bool
+├── firstHour: Int (0-23)
+├── sessionScheduler: SessionScheduler
+└── sessionKeepAlive: SessionKeepAlive?
+
+SessionScheduler (nova)
+├── calculateIntervals(firstHour: Int, count: Int) -> [Date]
+├── calculateNextPing(firstHour: Int) -> Date
+└── calculateTimelineBlocks(firstHour: Int) -> [TimeBlock]
 ```
 
-Both keep-alive components share the same `AccessTokenProvider` to reuse existing auth.
+## Componentes
 
-## Components
+### 1. SessionScheduler
 
-### 1. ChatCompletionModels
-
-**File:** `Sources/CodexUsageCore/Networking/ChatCompletionModels.swift` (new)
+**File:** `Sources/CodexUsageCore/Refresh/SessionScheduler.swift` (novo)
 
 ```swift
-public struct ChatCompletionRequest: Codable {
-    public let model: String
-    public let messages: [Message]
-    public struct Message: Codable {
-        public let role: String
-        public let content: String
-    }
-    public init(model: String = "gpt-4o", messages: [Message]) {
-        self.model = model
-        self.messages = messages
-    }
+public struct TimeBlock: Identifiable {
+    public let id = UUID()
+    public let startHour: Int
+    public let endHour: Int
+    public let label: String
+    public let isNext: Bool
 }
 
-public struct ChatCompletionResponse: Codable {
-    public let id: String?
-    public let choices: [Choice]?
-    public struct Choice: Codable {
-        public let message: Message?
-        public let finishReason: String?
-    }
+public final class SessionScheduler {
+    public func calculateIntervals(firstHour: Int, count: Int) -> [Date]
+    public func calculateNextPing(firstHour: Int) -> Date
+    public func calculateTimelineBlocks(firstHour: Int) -> [TimeBlock]
 }
 ```
 
-### 2. ChatCompletionClient
+### 2. SessionTimelineView
 
-**File:** `Sources/CodexUsageCore/Networking/ChatCompletionClient.swift` (new)
+**File:** `Sources/CodexUsageBar/UI/SessionTimelineView.swift` (novo)
 
-- Wraps existing `URLSessionHTTPClient`
-- Uses same `AccessTokenProvider` as UsageClient
-- Endpoint: `https://api.openai.com/v1/chat/completions`
-- Method: POST
-- Sends minimal request with "oi" message
-- Returns void on success, throws on failure
+- SwiftUI View
+- Timeline 24h horizontal
+- Blocos de 5h em azul
+- Ponto verde no próximo intervalo
+- Labels de hora embaixo
 
-### 3. SessionKeepAlive
+### 3. SettingsView Updates
 
-**File:** `Sources/CodexUsageCore/Refresh/SessionKeepAlive.swift` (new)
+- Adicionar `keepAliveEnabled` toggle
+- Adicionar `firstHour` slider (0-23)
+- Mostrar `SessionTimelineView` quando enabled
+- Mostrar "Próximo envio" com countdown
 
-- Task-based scheduler using `Task.sleep`
-- Fixed 5-hour interval (5 * 60 * 60 = 18000 seconds)
-- Fire-and-forget: ignores response, logs errors to console
-- Does not affect UI state
-- Starts after auth resolution in AppModel
+### 4. SessionKeepAlive (existente, modificado)
 
-## Integration
+- Adicionar `isEnabled` property
+- Não dispara se `isEnabled == false`
+- `start(accessToken:, firstHour:)` para sincronizar com scheduler
 
-### AppModel changes
+### 5. AppModel Updates
 
 ```swift
-// New property
-private var sessionKeepAlive: SessionKeepAlive?
+// Novas propriedades
+@Published var keepAliveEnabled: Bool = false
+@Published var firstHour: Int = 9
+private var keepAliveTask: Task<Void, Never>?
 
-// In start()
-func start() {
-    restoreUserSettings()
-    rebuildServiceAndRefresh()
-    startSessionKeepAlive()
-}
-
-// New method
-private func startSessionKeepAlive() {
-    guard !isSignedOut else { return }
-    let tokenProvider = AccessTokenProvider(tokenStore: tokenStore, refresher: oauthSession)
-    let client = ChatCompletionClient(tokenProvider: tokenProvider)
-    sessionKeepAlive = SessionKeepAlive(client: client)
-    sessionKeepAlive?.start()
-}
+// Métodos
+func setKeepAliveEnabled(_ enabled: Bool)
+func setFirstHour(_ hour: Int)
 ```
 
-### Error Handling
+## Persistência
 
-- Network failures: logged to console, no UI impact
-- Auth failures: logged, keep-alive stops
-- No user-facing error messages
+UserDefaults:
+- `settings.keepAliveEnabled`: Bool (default: false)
+- `settings.firstHour`: Int (default: 9)
 
-## Testing
+## Fluxo do Usuário
 
-- `ChatCompletionClientTests`: Mock HTTP, verify request body, status 200
-- `SessionKeepAliveTests`: Verify ping fires at correct interval (mocked time)
+1. Usuário abre Settings → toggle OFF por padrão
+2. Ativa toggle → slider aparece, timeline mostra intervalos
+3. Ajusta slider para 09:00 → timeline atualiza (09:00, 14:00, 19:00, 00:00, 05:00...)
+4.keep-alive começa a disparar pings na hora certa
+5. Desativa toggle → pings param imediatamente
 
-## Constraints
+## Error Handling
 
-- Interval is hardcoded (5 hours) - not configurable
-- No retry logic on failure
-- No queuing if device is offline
+- Falha de rede: log apenas, não afeta UI
+- Token inválido: SessionKeepAlive para, AppModel mostra erro sutil
+- App em background: continua funcionando (background task)
+
+## Testes
+
+- `SessionSchedulerTests`: verifica cálculo de intervalos
+- `SessionTimelineViewTests`: verifica renderização correta
+- `SessionKeepAliveTests`: verifica comportamento com isEnabled
+
+## Arquivos a Criar/Modificar
+
+| Arquivo | Ação |
+|---------|------|
+| `Sources/CodexUsageCore/Refresh/SessionScheduler.swift` | Criar |
+| `Sources/CodexUsageBar/UI/SessionTimelineView.swift` | Criar |
+| `Sources/CodexUsageBar/UI/SettingsView.swift` | Modificar |
+| `Sources/CodexUsageBar/App/AppModel.swift` | Modificar |
+| `Tests/CodexUsageCoreTests/SessionSchedulerTests.swift` | Criar |
+| `Tests/CodexUsageCoreTests/SessionTimelineViewTests.swift` | Criar |
