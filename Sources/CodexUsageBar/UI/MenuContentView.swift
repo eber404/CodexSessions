@@ -70,18 +70,13 @@ struct MenuContentView: View {
                         }
                     }
 
-                    menuActionButton("Logout") {
-                        model.logout()
-                    }
-
                     menuActionButton("Quit") {
                         NSApp.terminate(nil)
                     }
                 }
             }
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 8)
+        .padding(16)
         .frame(width: 360)
     }
 
@@ -152,7 +147,8 @@ private struct HoverMenuRowButton<Content: View>: View {
             .background {
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .fill(isHovering ? Color.primary.opacity(0.12) : Color.clear)
-                    .padding(.horizontal, -2)
+                    .padding(.horizontal, -8)
+                    .padding(.vertical, -1)
             }
         }
         .buttonStyle(.plain)
