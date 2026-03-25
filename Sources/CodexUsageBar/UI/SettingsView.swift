@@ -1,4 +1,5 @@
 import SwiftUI
+import CodexUsageCore
 
 struct SettingsView: View {
     @ObservedObject var model: AppModel
@@ -32,6 +33,52 @@ struct SettingsView: View {
                         set: { model.setLaunchAtLoginEnabled($0) }
                     )
                 )
+            }
+
+            Divider()
+                .padding(.horizontal, 2)
+                .opacity(0.7)
+
+            Section {
+                Toggle("Enable Session Keep-Alive", isOn: Binding(
+                    get: { model.keepAliveEnabled },
+                    set: { model.setKeepAliveEnabled($0) }
+                ))
+
+                if model.keepAliveEnabled {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("First hour of day:")
+                            Text(String(format: "%02d:00", model.firstHour))
+                                .fontWeight(.semibold)
+                        }
+
+                        Slider(
+                            value: Binding(
+                                get: { Double(model.firstHour) },
+                                set: { model.setFirstHour(Int($0)) }
+                            ),
+                            in: 0...23,
+                            step: 1
+                        )
+
+                        let scheduler = SessionScheduler()
+                        let blocks = scheduler.calculateTimelineBlocks(firstHour: model.firstHour)
+                        SessionTimelineView(blocks: blocks, firstHour: model.firstHour)
+
+                        let nextPing = scheduler.calculateNextPing(firstHour: model.firstHour)
+                        let formatter: DateFormatter = {
+                            let f = DateFormatter()
+                            f.timeStyle = .short
+                            return f
+                        }()
+                        Text("Next ping: \(formatter.string(from: nextPing))")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            } header: {
+                Text("Session Keep-Alive")
             }
 
             Divider()
