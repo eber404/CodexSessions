@@ -7,6 +7,11 @@ public struct ChatCompletionRequest: Codable {
     public struct Message: Codable {
         public let role: String
         public let content: String
+
+        enum CodingKeys: String, CodingKey {
+            case role
+            case content
+        }
     }
 
     public init(model: String = "gpt-4o", messages: [Message]) {
