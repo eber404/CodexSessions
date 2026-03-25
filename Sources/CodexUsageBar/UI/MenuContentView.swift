@@ -7,15 +7,27 @@ struct MenuContentView: View {
     let showSettings: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("CodexSessions")
                     .font(.headline)
                 Spacer()
                 if model.coordinator.state.snapshot != nil {
-                    Text("Updated: \(updatedLabel(primary: model.lastManualRefreshAt ?? model.coordinator.state.lastRefreshAt, fallback: model.coordinator.state.snapshot?.fetchedAt))")
-                        .font(.caption)
+                    HStack(spacing: 6) {
+                        Text("Updated at \(updatedLabel(primary: model.lastManualRefreshAt ?? model.coordinator.state.lastRefreshAt, fallback: model.coordinator.state.snapshot?.fetchedAt))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Button {
+                            model.refreshNow()
+                        } label: {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.caption)
+                        }
+                        .buttonStyle(.plain)
                         .foregroundStyle(.secondary)
+                        .help("Refresh")
+                    }
                 }
             }
 
@@ -42,16 +54,12 @@ struct MenuContentView: View {
 
             Divider()
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 1) {
                 if model.isSignedOut {
                     menuActionButton("Signin with OpenAI") {
                         model.connectOAuth()
                     }
                 } else {
-                    menuActionButton("Refresh") {
-                        model.refreshNow()
-                    }
-
                     menuActionButton("Settings") {
                         showSettings()
                     }
@@ -72,7 +80,8 @@ struct MenuContentView: View {
                 }
             }
         }
-        .padding(14)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
         .frame(width: 360)
     }
 
@@ -99,7 +108,7 @@ struct MenuContentView: View {
         guard let date = primary ?? fallback else { return "--:--:--" }
         let formatter = DateFormatter()
         formatter.locale = .current
-        formatter.dateFormat = "HH:mm:ss.SSS"
+        formatter.dateFormat = "HH:mm:ss"
         return formatter.string(from: date)
     }
 
@@ -138,13 +147,13 @@ private struct HoverMenuRowButton<Content: View>: View {
                     .foregroundStyle(.primary)
                 Spacer(minLength: 0)
             }
-            .padding(.vertical, 7)
-            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
             .contentShape(Rectangle())
             .background(
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .fill(isHovering ? Color.primary.opacity(0.12) : Color.clear)
             )
+            .padding(.horizontal, -4)
         }
         .buttonStyle(.plain)
         .onHover { isHovering = $0 }
