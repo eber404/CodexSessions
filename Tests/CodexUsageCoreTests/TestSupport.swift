@@ -13,11 +13,18 @@ struct FakeFileManager: FileManaging {
     }
 }
 
-struct MockHTTPClient: HTTPClient {
+final class MockHTTPClient: HTTPClient, @unchecked Sendable {
     let responseData: Data
     let statusCode: Int
+    var onRequest: ((URLRequest) -> Void)?
+
+    init(responseData: Data, statusCode: Int) {
+        self.responseData = responseData
+        self.statusCode = statusCode
+    }
 
     func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        onRequest?(request)
         let response = HTTPURLResponse(
             url: request.url!,
             statusCode: statusCode,

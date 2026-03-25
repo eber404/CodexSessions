@@ -7,15 +7,12 @@ public enum ChatCompletionError: Error {
 }
 
 public struct ChatCompletionClient {
-    private let tokenProvider: AccessTokenProviding
     private let httpClient: HTTPClient
     private let baseURL = URL(string: "https://api.openai.com")!
 
     public init(
-        tokenProvider: AccessTokenProviding = AccessTokenProvider(),
         httpClient: HTTPClient = URLSessionHTTPClient()
     ) {
-        self.tokenProvider = tokenProvider
         self.httpClient = httpClient
     }
 
@@ -30,6 +27,7 @@ public struct ChatCompletionClient {
         urlRequest.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         urlRequest.httpBody = body
+        urlRequest.timeoutInterval = 30
 
         let (_, response) = try await httpClient.data(for: urlRequest)
 
