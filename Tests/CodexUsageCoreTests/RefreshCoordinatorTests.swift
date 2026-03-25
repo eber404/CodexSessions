@@ -78,6 +78,30 @@ final class RefreshCoordinatorTests: XCTestCase {
         XCTAssertNil(coordinator.state.lastRefreshAt)
         XCTAssertNil(coordinator.state.lastError)
     }
+
+    func testAutoRefreshRunsInBackground() async throws {
+        let now = Date(timeIntervalSince1970: 4000)
+        let snapshot = UsageSnapshot(
+            accountEmail: "user@example.com",
+            sourceLabel: "local",
+            windows: [
+                UsageWindow(kind: .shortWindow, label: "Daily", used: 10, limit: 100, resetAt: now.addingTimeInterval(3600)),
+            ],
+            fetchedAt: now
+        )
+
+        let service = CountingUsageService(snapshot: snapshot)
+        let coordinator = RefreshCoordinator(service: service)
+        coordinator.startAutoRefresh(interval: 0.05)
+
+        defer { coordinator.stopAutoRefresh() }
+
+        try? await Task.sleep(nanoseconds: 130_000_000)
+
+        XCTAssertNotNil(coordinator.state.lastRefreshAt)
+        XCTAssertNotNil(coordinator.state.snapshot)
+        XCTAssertGreaterThanOrEqual(service.fetchCount, 2)
+    }
 }
 
 private struct StubUsageService: UsageService {
@@ -85,5 +109,20 @@ private struct StubUsageService: UsageService {
 
     func fetchUsage() async throws -> UsageSnapshot {
         try result.get()
+    }
+}
+
+@MainActor
+private final class CountingUsageService: UsageService {
+    private(set) var fetchCount = 0
+    private let snapshot: UsageSnapshot
+
+    init(snapshot: UsageSnapshot) {
+        self.snapshot = snapshot
+    }
+
+    func fetchUsage() async throws -> UsageSnapshot {
+        fetchCount += 1
+        return snapshot
     }
 }

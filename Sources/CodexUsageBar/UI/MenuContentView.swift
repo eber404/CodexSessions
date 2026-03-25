@@ -15,7 +15,7 @@ struct MenuContentView: View {
                 Spacer()
                 if coordinator.state.snapshot != nil {
                     HStack(spacing: 6) {
-                        Text("Updated at \(updatedLabel(primary: model.lastManualRefreshAt ?? coordinator.state.lastRefreshAt, fallback: coordinator.state.snapshot?.fetchedAt))")
+                        Text("Updated at \(updatedLabel(primary: coordinator.state.lastRefreshAt, fallback: coordinator.state.snapshot?.fetchedAt))")
                             .font(.caption)
                             .foregroundStyle(.secondary)
 

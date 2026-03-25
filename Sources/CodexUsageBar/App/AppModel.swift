@@ -47,6 +47,7 @@ final class AppModel: ObservableObject {
             let path = preferredAuthPath.isEmpty ? nil : preferredAuthPath
             let source = try resolver.resolve(preferredPath: path)
             activeSourceLabel = source.sourceLabel
+            authMessage = source.connectionStatusLabel
             coordinator.service = UsageClient(
                 source: source,
                 tokenProvider: AccessTokenProvider(tokenStore: tokenStore, refresher: oauthSession)
@@ -75,7 +76,6 @@ final class AppModel: ObservableObject {
                 let record = try await oauthSession.startOAuth()
                 try tokenStore.saveTokenRecord(record, account: KeychainTokenStore.defaultAccount)
                 isSignedOut = false
-                authMessage = "OAuth connected"
                 rebuildServiceAndRefresh()
             } catch {
                 authMessage = "OAuth failed: \(error)"
@@ -87,7 +87,6 @@ final class AppModel: ObservableObject {
         do {
             try tokenStore.saveAccessToken(token, account: KeychainTokenStore.defaultAccount)
             isSignedOut = false
-            authMessage = "Token saved"
             rebuildServiceAndRefresh()
         } catch {
             authMessage = "Failed to save token: \(error)"
