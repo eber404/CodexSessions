@@ -36,7 +36,7 @@ swift run CodexSessions
 ## Hot Reload (InjectionIII)
 
 - Install app: `/Applications/InjectionIII.app` (version `5.1.0` installed locally).
-- Debug builds already load `macOSInjection.bundle` on startup.
+- Debug builds load `macOSInjection.bundle` when the InjectionIII app is running.
 - Debug linker flags already include `-Xlinker -interposable`.
 - In Xcode 16.3+, add `EMIT_FRONTEND_COMMAND_LINES=YES` in Debug build settings.
 

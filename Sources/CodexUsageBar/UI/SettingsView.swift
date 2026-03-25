@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject var model: AppModel
+    let onLogout: () -> Void
     @State private var launchAtLogin: Bool = false
     @State private var refreshMinutes: Int = 5
 
@@ -39,7 +40,7 @@ struct SettingsView: View {
             HStack {
                 Spacer(minLength: 0)
                 Button("Logout") {
-                    model.logout()
+                    onLogout()
                 }
                 Spacer(minLength: 0)
             }

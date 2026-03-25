@@ -1,7 +1,16 @@
 import AppKit
 
 #if DEBUG
-Bundle(path: "/Applications/InjectionIII.app/Contents/Resources/macOSInjection.bundle")?.load()
+private func loadInjectionBundleIfAppIsRunning() {
+    let isInjectionRunning = !NSRunningApplication.runningApplications(
+        withBundleIdentifier: "com.johnholdsworth.InjectionIII"
+    ).isEmpty
+
+    guard isInjectionRunning else { return }
+    Bundle(path: "/Applications/InjectionIII.app/Contents/Resources/macOSInjection.bundle")?.load()
+}
+
+loadInjectionBundleIfAppIsRunning()
 #endif
 
 let app = NSApplication.shared
