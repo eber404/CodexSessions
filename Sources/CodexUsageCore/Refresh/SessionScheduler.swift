@@ -1,8 +1,7 @@
 // Sources/CodexUsageCore/Refresh/SessionScheduler.swift
 import Foundation
 
-public struct TimeBlock: Identifiable {
-    public let id = UUID()
+public struct TimeBlock {
     public let startHour: Int
     public let endHour: Int
     public let label: String
@@ -18,10 +17,14 @@ public struct TimeBlock: Identifiable {
 
 public final class SessionScheduler {
     private let calendar = Calendar.current
+    private let intervalHours = 5
+    private let timelineBlockCount = 5
 
     public init() {}
 
     public func calculateIntervals(firstHour: Int, count: Int) -> [Date] {
+        guard (0...23).contains(firstHour), count >= 0 else { return [] }
+
         var intervals: [Date] = []
         var currentHour = firstHour
 
@@ -29,10 +32,10 @@ public final class SessionScheduler {
             if let date = nextIntervalDate(hour: currentHour) {
                 intervals.append(date)
             }
-            currentHour = (currentHour + 5) % 24
+            currentHour = (currentHour + intervalHours) % 24
         }
 
-        return intervals
+        return intervals.sorted()
     }
 
     public func calculateNextPing(firstHour: Int) -> Date {
@@ -51,8 +54,8 @@ public final class SessionScheduler {
         var blocks: [TimeBlock] = []
         var currentHour = firstHour
 
-        for _ in 0..<5 {
-            let endHour = (currentHour + 5) % 24
+        for _ in 0..<timelineBlockCount {
+            let endHour = (currentHour + intervalHours) % 24
             let isNext = currentHour == firstHour
 
             let label = String(format: "%02d:00", currentHour)
@@ -64,7 +67,7 @@ public final class SessionScheduler {
             )
             blocks.append(block)
 
-            currentHour = (currentHour + 5) % 24
+            currentHour = (currentHour + intervalHours) % 24
         }
 
         return blocks

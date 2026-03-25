@@ -7,7 +7,7 @@ final class SessionSchedulerTests: XCTestCase {
         let scheduler = SessionScheduler()
         let intervals = scheduler.calculateIntervals(firstHour: 9, count: 6)
         let hours = intervals.map { Calendar.current.component(.hour, from: $0) }
-        XCTAssertEqual(hours, [9, 14, 19, 0, 5, 10])
+        XCTAssertEqual(hours, [0, 5, 9, 10, 14, 19])
     }
 
     func testCalculateNextPingFromNow() {
