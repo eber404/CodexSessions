@@ -2,10 +2,25 @@ import CodexUsageCore
 import Combine
 import Foundation
 
+protocol LoginItemManaging {
+    var isEnabled: Bool { get }
+    func setEnabled(_ enabled: Bool)
+}
+
+extension LoginItemManager: LoginItemManaging {}
+
 @MainActor
 final class AppModel: ObservableObject {
+    private enum PreferenceKey {
+        static let refreshIntervalSeconds = "settings.refreshIntervalSeconds"
+        static let launchAtLoginEnabled = "settings.launchAtLoginEnabled"
+    }
+
+    private static let defaultRefreshIntervalSeconds: TimeInterval = 300
+
     @Published var preferredAuthPath: String = ""
-    @Published var refreshIntervalSeconds: TimeInterval = 300
+    @Published var refreshIntervalSeconds: TimeInterval = AppModel.defaultRefreshIntervalSeconds
+    @Published var launchAtLoginEnabled: Bool = false
     @Published var showUsedInsteadOfRemaining: Bool = false
     @Published var activeSourceLabel: String = "Detecting..."
     @Published var authMessage: String?
@@ -16,21 +31,56 @@ final class AppModel: ObservableObject {
     let coordinator: RefreshCoordinator
 
     private let oauthSession: OpenAIOAuthSession
+    private let userDefaults: UserDefaults
+    private let loginItemManager: LoginItemManaging
 
-    init(tokenStore: KeychainTokenStore = KeychainTokenStore(), oauthSession: OpenAIOAuthSession = OpenAIOAuthSession()) {
+    init(
+        tokenStore: KeychainTokenStore = KeychainTokenStore(),
+        oauthSession: OpenAIOAuthSession = OpenAIOAuthSession(),
+        userDefaults: UserDefaults = .standard,
+        loginItemManager: LoginItemManaging = LoginItemManager()
+    ) {
         self.tokenStore = tokenStore
         self.oauthSession = oauthSession
+        self.userDefaults = userDefaults
+        self.loginItemManager = loginItemManager
         self.coordinator = RefreshCoordinator(service: EmptyUsageService())
     }
 
     func start() {
+        restoreUserSettings()
         rebuildServiceAndRefresh()
+    }
+
+    func restoreUserSettings() {
+        let persistedInterval = userDefaults.double(forKey: PreferenceKey.refreshIntervalSeconds)
+        refreshIntervalSeconds = persistedInterval > 0 ? persistedInterval : AppModel.defaultRefreshIntervalSeconds
+
+        if userDefaults.object(forKey: PreferenceKey.launchAtLoginEnabled) == nil {
+            launchAtLoginEnabled = loginItemManager.isEnabled
+        } else {
+            launchAtLoginEnabled = userDefaults.bool(forKey: PreferenceKey.launchAtLoginEnabled)
+        }
+
+        loginItemManager.setEnabled(launchAtLoginEnabled)
     }
 
     func updateRefreshInterval() {
         if !isSignedOut {
             coordinator.startAutoRefresh(interval: refreshIntervalSeconds)
         }
+    }
+
+    func setRefreshInterval(minutes: Int) {
+        refreshIntervalSeconds = TimeInterval(minutes * 60)
+        userDefaults.set(refreshIntervalSeconds, forKey: PreferenceKey.refreshIntervalSeconds)
+        updateRefreshInterval()
+    }
+
+    func setLaunchAtLoginEnabled(_ enabled: Bool) {
+        launchAtLoginEnabled = enabled
+        userDefaults.set(enabled, forKey: PreferenceKey.launchAtLoginEnabled)
+        loginItemManager.setEnabled(enabled)
     }
 
     func rebuildServiceAndRefresh() {
@@ -48,9 +98,15 @@ final class AppModel: ObservableObject {
             let source = try resolver.resolve(preferredPath: path)
             activeSourceLabel = source.sourceLabel
             authMessage = source.connectionStatusLabel
-            coordinator.service = UsageClient(
-                source: source,
-                tokenProvider: AccessTokenProvider(tokenStore: tokenStore, refresher: oauthSession)
+            let tokenProvider = AccessTokenProvider(tokenStore: tokenStore, refresher: oauthSession)
+            coordinator.service = AuthFallbackUsageService(
+                initialSource: source,
+                tokenStore: tokenStore,
+                tokenProvider: tokenProvider,
+                onSourceChange: { [weak self] source in
+                    self?.activeSourceLabel = source.sourceLabel
+                    self?.authMessage = source.connectionStatusLabel
+                }
             )
             coordinator.startAutoRefresh(interval: refreshIntervalSeconds)
         } catch {
@@ -113,5 +169,51 @@ final class AppModel: ObservableObject {
 private struct EmptyUsageService: UsageService {
     func fetchUsage() async throws -> UsageSnapshot {
         throw UsageClientError.unauthorized
+    }
+}
+
+@MainActor
+private final class AuthFallbackUsageService: UsageService {
+    private var source: AuthSource
+    private let tokenStore: TokenStore
+    private let tokenProvider: AccessTokenProviding
+    private let onSourceChange: (AuthSource) -> Void
+
+    init(
+        initialSource: AuthSource,
+        tokenStore: TokenStore,
+        tokenProvider: AccessTokenProviding,
+        onSourceChange: @escaping (AuthSource) -> Void
+    ) {
+        self.source = initialSource
+        self.tokenStore = tokenStore
+        self.tokenProvider = tokenProvider
+        self.onSourceChange = onSourceChange
+    }
+
+    func fetchUsage() async throws -> UsageSnapshot {
+        do {
+            return try await usageClient(for: source).fetchUsage()
+        } catch UsageClientError.unauthorized {
+            guard case .localAuthFile = source,
+                  let oauthAccessToken = try tokenStore.loadAccessToken(account: KeychainTokenStore.defaultAccount),
+                  !oauthAccessToken.isEmpty
+            else {
+                throw UsageClientError.unauthorized
+            }
+
+            let oauthSource = AuthSource.oauthKeychain(
+                service: KeychainTokenStore.serviceName,
+                account: KeychainTokenStore.defaultAccount
+            )
+            source = oauthSource
+            onSourceChange(oauthSource)
+
+            return try await usageClient(for: oauthSource).fetchUsage()
+        }
+    }
+
+    private func usageClient(for source: AuthSource) -> UsageClient {
+        UsageClient(source: source, tokenProvider: tokenProvider)
     }
 }

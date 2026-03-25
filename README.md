@@ -1,57 +1,43 @@
 # CodexSessions
 
-Simple macOS menu bar app that shows Codex usage (short window + weekly window) from OpenAI's usage endpoint.
+CodexSessions is a lightweight macOS menu bar app that shows OpenAI Codex usage windows at a glance.
 
-## Features (V1)
+## What the app does
 
-- Menu bar icon with two bars (short + weekly)
-- Popover with current usage, reset time, source label, and refresh action
-- Auto-detect local auth from:
-  - `~/.codex/auth.json`
-  - `$CODEX_HOME/auth.json`
-  - `~/.config/opencode/auth.json`
-  - `$OPENCODE_HOME/auth.json`
-- OAuth fallback using in-app flow (experimental)
-- Manual token save to Keychain fallback
-- Refresh loop and launch-at-login toggle
+- Shows usage as percent for short and weekly windows.
+- Keeps status visible from the menu bar icon.
+- Opens a compact popover with usage details and refresh timestamp.
+- Provides a small Settings screen for refresh interval and launch-at-login.
 
-## Build
+## Authentication model
 
-```bash
-swift build
-```
+CodexSessions resolves auth in this order:
 
-## Test
+1. Local auth files (Codex/OpenCode)
+2. OpenAI OAuth fallback
 
-```bash
-swift test
-```
+Common local auth locations:
 
-## Run
+- `~/.codex/auth.json`
+- `$CODEX_HOME/auth.json`
+- `~/.config/opencode/auth.json`
+- `$OPENCODE_HOME/auth.json`
 
-```bash
-swift run CodexSessions
-```
+In the UI, the app labels the active connection source (for example, OpenCode, Codex CLI, or OpenAI OAuth).
 
-## Hot Reload (InjectionIII)
+## Refresh behavior
 
-- Install app: `/Applications/InjectionIII.app` (version `5.1.0` installed locally).
-- Debug builds load `macOSInjection.bundle` when the InjectionIII app is running.
-- Debug linker flags already include `-Xlinker -interposable`.
-- In Xcode 16.3+, add `EMIT_FRONTEND_COMMAND_LINES=YES` in Debug build settings.
+- Supports refresh interval presets: 1, 3, and 5 minutes.
+- Keeps last known snapshot on transient failures.
+- Exposes explicit manual refresh in the menu.
+- Stores user-selected refresh interval and launch-at-login preference across app restarts.
 
-## OAuth notes
+## Security and data handling
 
-The OAuth flow is optional and experimental. To enable it, set:
+- App-managed OAuth credentials are stored in macOS Keychain.
+- Auth/token handling is isolated to core auth components.
+- Never store or commit raw tokens in source control.
 
-```bash
-export OPENAI_OAUTH_CLIENT_ID="your_client_id"
-export OPENAI_OAUTH_REDIRECT_URI="codexusagebar://oauth/callback"
-```
+## Releases
 
-If OAuth is not configured, you can still use auto-discovered local auth or save a manual access token from Settings.
-
-## Security
-
-- Do not hard-code bearer tokens in source files.
-- Tokens are stored in macOS Keychain (`CodexSessions` service).
+Installable binaries are published in GitHub Releases.

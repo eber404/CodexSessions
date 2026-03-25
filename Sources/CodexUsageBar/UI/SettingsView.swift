@@ -3,7 +3,6 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var model: AppModel
     let onLogout: () -> Void
-    @State private var launchAtLogin: Bool = false
     @State private var refreshMinutes: Int = 5
 
     var body: some View {
@@ -17,8 +16,7 @@ struct SettingsView: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .onChange(of: refreshMinutes) { _, newValue in
-                    model.refreshIntervalSeconds = TimeInterval(newValue * 60)
-                    model.updateRefreshInterval()
+                    model.setRefreshInterval(minutes: newValue)
                 }
             }
 
@@ -27,10 +25,13 @@ struct SettingsView: View {
                 .opacity(0.7)
 
             sectionBlock(title: "System") {
-                Toggle("Launch at login", isOn: $launchAtLogin)
-                    .onChange(of: launchAtLogin) { _, enabled in
-                        LoginItemManager().setEnabled(enabled)
-                    }
+                Toggle(
+                    "Launch at login",
+                    isOn: Binding(
+                        get: { model.launchAtLoginEnabled },
+                        set: { model.setLaunchAtLoginEnabled($0) }
+                    )
+                )
             }
 
             Divider()
@@ -49,10 +50,8 @@ struct SettingsView: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .onAppear {
-            launchAtLogin = LoginItemManager().isEnabled
             let minutes = Int(model.refreshIntervalSeconds / 60)
             refreshMinutes = [1, 3, 5].contains(minutes) ? minutes : 5
-            model.refreshIntervalSeconds = TimeInterval(refreshMinutes * 60)
         }
     }
 

@@ -21,5 +21,6 @@ let package = Package(
             ]
         ),
         .testTarget(name: "CodexUsageCoreTests", dependencies: ["CodexUsageCore"]),
+        .testTarget(name: "CodexSessionsTests", dependencies: ["CodexSessions"]),
     ]
 )
