@@ -33,6 +33,7 @@ final class AppModel: ObservableObject {
     private let oauthSession: OpenAIOAuthSession
     private let userDefaults: UserDefaults
     private let loginItemManager: LoginItemManaging
+    private var sessionKeepAlive: SessionKeepAlive?
 
     init(
         tokenStore: KeychainTokenStore = KeychainTokenStore(),
@@ -68,6 +69,19 @@ final class AppModel: ObservableObject {
     func updateRefreshInterval() {
         if !isSignedOut {
             coordinator.startAutoRefresh(interval: refreshIntervalSeconds)
+        }
+    }
+
+    private func startSessionKeepAlive() {
+        guard !isSignedOut else { return }
+        let tokenProvider = AccessTokenProvider(tokenStore: tokenStore, refresher: oauthSession)
+        let client = ChatCompletionClient()
+        sessionKeepAlive = SessionKeepAlive(client: client)
+        Task {
+            let source = try? AuthDiscovery().resolve(preferredPath: preferredAuthPath.isEmpty ? nil : preferredAuthPath)
+            if let source = source, let token = try? await tokenProvider.accessToken(for: source) {
+                await sessionKeepAlive?.start(accessToken: token)
+            }
         }
     }
 
@@ -110,6 +124,7 @@ final class AppModel: ObservableObject {
                 }
             )
             coordinator.startAutoRefresh(interval: refreshIntervalSeconds)
+            startSessionKeepAlive()
         } catch {
             authMessage = "Unable to resolve auth source: \(error)"
         }
