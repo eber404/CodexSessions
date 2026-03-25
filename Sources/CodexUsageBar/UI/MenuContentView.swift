@@ -65,13 +65,13 @@ struct MenuContentView: View {
 
     @ViewBuilder
     private func windowRow(_ window: UsageWindow) -> some View {
-        let ratio = model.showUsedInsteadOfRemaining ? window.usedRatio : (1 - window.usedRatio)
+        let ratio = window.usedRatio
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(window.label)
                     .font(.subheadline)
                 Spacer()
-                Text(valueText(for: window))
+                Text("\(Int((window.usedRatio * 100).rounded()))% used")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -80,13 +80,6 @@ struct MenuContentView: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
-    }
-
-    private func valueText(for window: UsageWindow) -> String {
-        if model.showUsedInsteadOfRemaining {
-            return "\(Int(window.used))/\(Int(window.limit)) used"
-        }
-        return "\(Int(window.remaining))/\(Int(window.limit)) left"
     }
 
     private func updatedLabel(primary: Date?, fallback: Date) -> String {
