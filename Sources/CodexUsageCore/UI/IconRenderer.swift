@@ -16,27 +16,59 @@ public struct IconRendererModel: Sendable {
     }
 }
 
-public struct IconBar: Equatable, Sendable {
+public struct IconRing: Equatable, Sendable {
     public var name: String
-    public var width: Double
-    public var y: Double
+    public var radius: Double
+    public var lineWidth: Double
+    public var startAngle: Double
+    public var sweepAngle: Double
+    public var maxSweep: Double
 
-    public init(name: String, width: Double, y: Double) {
+    public init(
+        name: String,
+        radius: Double,
+        lineWidth: Double,
+        startAngle: Double,
+        sweepAngle: Double,
+        maxSweep: Double
+    ) {
         self.name = name
-        self.width = width
-        self.y = y
+        self.radius = radius
+        self.lineWidth = lineWidth
+        self.startAngle = startAngle
+        self.sweepAngle = sweepAngle
+        self.maxSweep = maxSweep
     }
 }
 
 public struct IconRenderer {
     public init() {}
 
-    public func barLayout(for model: IconRendererModel) -> [IconBar] {
-        let shortWidth = max(2, 16 * clamped(model.shortProgress))
-        let weeklyWidth = max(2, 16 * clamped(model.weeklyProgress))
+    public func ringLayout(for model: IconRendererModel) -> [IconRing] {
+        let startAngle = -90.0
+        let maxSweep = 300.0
+        let minSweep = 14.0
+
+        let weeklySweep = minSweep + (maxSweep - minSweep) * clamped(model.weeklyProgress)
+        let shortSweep = minSweep + (maxSweep - minSweep) * clamped(model.shortProgress)
+
         return [
-            IconBar(name: "short", width: shortWidth, y: 5),
-            IconBar(name: "weekly", width: weeklyWidth, y: 11),
+            IconRing(
+                name: "weekly",
+                radius: 7.1,
+                lineWidth: 2.3,
+                startAngle: startAngle,
+                sweepAngle: weeklySweep,
+                maxSweep: maxSweep
+            ),
+            IconRing(
+                name: "short",
+                radius: 4.2,
+                lineWidth: 2.2,
+                startAngle: startAngle,
+                sweepAngle: shortSweep,
+                maxSweep: maxSweep
+            ),
         ]
     }
 
@@ -49,11 +81,22 @@ public struct IconRenderer {
         NSBezierPath(rect: NSRect(x: 0, y: 0, width: size, height: size)).fill()
 
         let color = model.isStale ? NSColor.secondaryLabelColor : NSColor.labelColor
-        color.setFill()
+        color.setStroke()
 
-        for bar in barLayout(for: model) {
-            let rect = NSRect(x: 1, y: bar.y, width: bar.width, height: bar.name == "weekly" ? 2 : 4)
-            NSBezierPath(roundedRect: rect, xRadius: 1, yRadius: 1).fill()
+        let center = NSPoint(x: size / 2, y: size / 2)
+
+        for ring in ringLayout(for: model) {
+            let path = NSBezierPath()
+            path.appendArc(
+                withCenter: center,
+                radius: CGFloat(ring.radius),
+                startAngle: CGFloat(ring.startAngle),
+                endAngle: CGFloat(ring.startAngle - ring.sweepAngle),
+                clockwise: true
+            )
+            path.lineWidth = CGFloat(ring.lineWidth)
+            path.lineCapStyle = .round
+            path.stroke()
         }
 
         image.unlockFocus()

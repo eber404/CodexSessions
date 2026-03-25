@@ -1,13 +1,16 @@
-import AuthenticationServices
 import CommonCrypto
 import Foundation
 import AppKit
+import Network
 import CodexUsageCore
 
 enum OpenAIOAuthError: Error {
     case invalidState
     case callbackMissing
     case codeExchangeFailed
+    case invalidRedirectURI
+    case cannotOpenBrowser
+    case callbackTimedOut
 }
 
 @MainActor
@@ -35,7 +38,7 @@ final class OpenAIOAuthSession: NSObject, OAuthTokenRefreshing {
             throw OpenAIOAuthError.callbackMissing
         }
 
-        let callbackURL = try await runWebSession(startURL: url, callbackScheme: "http")
+        let callbackURL = try await runDefaultBrowserLoopbackSession(startURL: url, redirectURI: redirectURI)
         let queryItems = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false)?.queryItems
 
         guard let authCode = queryItems?.first(where: { $0.name == "code" })?.value else {
@@ -52,22 +55,33 @@ final class OpenAIOAuthSession: NSObject, OAuthTokenRefreshing {
         )
     }
 
-    private func runWebSession(startURL: URL, callbackScheme: String) async throws -> URL {
-        try await withCheckedThrowingContinuation { continuation in
-            let session = ASWebAuthenticationSession(url: startURL, callbackURLScheme: callbackScheme) { callbackURL, error in
-                if let error {
-                    continuation.resume(throwing: error)
-                    return
-                }
-                guard let callbackURL else {
-                    continuation.resume(throwing: OpenAIOAuthError.callbackMissing)
-                    return
-                }
-                continuation.resume(returning: callbackURL)
-            }
-            session.prefersEphemeralWebBrowserSession = true
-            session.presentationContextProvider = AuthPresentationContextProvider.shared
-            _ = session.start()
+    private func runDefaultBrowserLoopbackSession(startURL: URL, redirectURI: String) async throws -> URL {
+        guard let redirectURL = URL(string: redirectURI),
+              let redirectComponents = URLComponents(url: redirectURL, resolvingAgainstBaseURL: false),
+              redirectComponents.scheme == "http",
+              let host = redirectComponents.host,
+              let port = redirectComponents.port
+        else {
+            throw OpenAIOAuthError.invalidRedirectURI
+        }
+
+        let path = redirectComponents.path.isEmpty ? "/" : redirectComponents.path
+        let listener = LocalhostOAuthCallbackListener(host: host, port: UInt16(port), path: path)
+        let callbackTask = Task {
+            try await listener.waitForCallback()
+        }
+
+        guard NSWorkspace.shared.open(startURL) else {
+            callbackTask.cancel()
+            throw OpenAIOAuthError.cannotOpenBrowser
+        }
+
+        do {
+            return try await callbackTask.value
+        } catch is CancellationError {
+            throw OpenAIOAuthError.callbackMissing
+        } catch {
+            throw error
         }
     }
 
@@ -154,11 +168,144 @@ final class OpenAIOAuthSession: NSObject, OAuthTokenRefreshing {
     }
 }
 
-private final class AuthPresentationContextProvider: NSObject, ASWebAuthenticationPresentationContextProviding {
-    static let shared = AuthPresentationContextProvider()
+private final class LocalhostOAuthCallbackListener: @unchecked Sendable {
+    private let expectedHost: String
+    private let expectedPort: UInt16
+    private let expectedPath: String
 
-    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
-        NSApplication.shared.windows.first ?? ASPresentationAnchor()
+    init(host: String, port: UInt16, path: String) {
+        self.expectedHost = host
+        self.expectedPort = port
+        self.expectedPath = path
+    }
+
+    private final class CallbackCompletionState: @unchecked Sendable {
+        private let queue: DispatchQueue
+        private let continuation: CheckedContinuation<URL, Error>
+        private var listener: NWListener?
+        private var isCompleted = false
+
+        init(queue: DispatchQueue, continuation: CheckedContinuation<URL, Error>) {
+            self.queue = queue
+            self.continuation = continuation
+        }
+
+        func setListener(_ listener: NWListener) {
+            queue.async {
+                self.listener = listener
+            }
+        }
+
+        func finish(_ result: Result<URL, Error>) {
+            queue.async {
+                guard !self.isCompleted else { return }
+                self.isCompleted = true
+                self.listener?.cancel()
+                self.continuation.resume(with: result)
+            }
+        }
+    }
+
+    func waitForCallback(timeout: TimeInterval = 180) async throws -> URL {
+        try await withCheckedThrowingContinuation { continuation in
+            let queue = DispatchQueue(label: "OpenAIOAuthSession.loopback")
+            let completion = CallbackCompletionState(queue: queue, continuation: continuation)
+
+            do {
+                guard let port = NWEndpoint.Port(rawValue: expectedPort) else {
+                    completion.finish(.failure(OpenAIOAuthError.invalidRedirectURI))
+                    return
+                }
+
+                let newListener = try NWListener(using: .tcp, on: port)
+                completion.setListener(newListener)
+
+                newListener.stateUpdateHandler = { state in
+                    if case .failed(let error) = state {
+                        completion.finish(.failure(error))
+                    }
+                }
+
+                newListener.newConnectionHandler = { connection in
+                    connection.start(queue: queue)
+                    connection.receive(minimumIncompleteLength: 1, maximumLength: 16_384) { data, _, _, receiveError in
+                        if let receiveError {
+                            connection.cancel()
+                            completion.finish(.failure(receiveError))
+                            return
+                        }
+
+                        guard let data, let requestTarget = self.requestTarget(from: data) else {
+                            self.respond(to: connection, status: "400 Bad Request", body: "Invalid callback request")
+                            return
+                        }
+
+                        guard let callbackURL = self.callbackURL(from: requestTarget) else {
+                            self.respond(to: connection, status: "404 Not Found", body: "Unknown callback path")
+                            return
+                        }
+
+                        self.respond(
+                            to: connection,
+                            status: "200 OK",
+                            body: "<html><body><h3>Sign-in complete.</h3><p>You can close this tab and return to CodexSessions.</p></body></html>"
+                        )
+                        completion.finish(.success(callbackURL))
+                    }
+                }
+
+                newListener.start(queue: queue)
+
+                queue.asyncAfter(deadline: .now() + timeout) {
+                    completion.finish(.failure(OpenAIOAuthError.callbackTimedOut))
+                }
+            } catch {
+                continuation.resume(throwing: error)
+            }
+        }
+    }
+
+    private func requestTarget(from data: Data) -> String? {
+        guard let request = String(data: data, encoding: .utf8),
+              let firstLine = request.components(separatedBy: "\r\n").first
+        else {
+            return nil
+        }
+
+        let components = firstLine.split(separator: " ")
+        guard components.count >= 2 else { return nil }
+        return String(components[1])
+    }
+
+    private func callbackURL(from requestTarget: String) -> URL? {
+        let url: URL?
+        if let absolute = URL(string: requestTarget), absolute.scheme != nil {
+            url = absolute
+        } else {
+            url = URL(string: "http://\(expectedHost):\(expectedPort)\(requestTarget)")
+        }
+
+        guard let url,
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              components.host?.caseInsensitiveCompare(expectedHost) == .orderedSame,
+              components.port == Int(expectedPort),
+              components.path == expectedPath
+        else {
+            return nil
+        }
+
+        return url
+    }
+
+    private func respond(to connection: NWConnection, status: String, body: String) {
+        let bodyData = Data(body.utf8)
+        let header = "HTTP/1.1 \(status)\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: \(bodyData.count)\r\nConnection: close\r\n\r\n"
+        var response = Data(header.utf8)
+        response.append(bodyData)
+
+        connection.send(content: response, completion: .contentProcessed { _ in
+            connection.cancel()
+        })
     }
 }
 
