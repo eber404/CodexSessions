@@ -75,6 +75,7 @@ final class AppModel: ObservableObject {
 
     private func startSessionKeepAlive() {
         keepAliveTask?.cancel()
+        sessionKeepAlive = nil
         guard !isSignedOut else { return }
         let tokenProvider = AccessTokenProvider(tokenStore: tokenStore, refresher: oauthSession)
         let client = ChatCompletionClient()
@@ -105,6 +106,7 @@ final class AppModel: ObservableObject {
             coordinator.service = EmptyUsageService()
             coordinator.clearState()
             activeSourceLabel = ""
+            sessionKeepAlive = nil
             return
         }
 
@@ -177,6 +179,7 @@ final class AppModel: ObservableObject {
 
     func logout() {
         keepAliveTask?.cancel()
+        sessionKeepAlive = nil
         disconnectOAuth()
         isSignedOut = true
         authMessage = nil
