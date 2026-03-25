@@ -26,7 +26,7 @@ struct MenuContentView: View {
                     windowRow(window)
                 }
 
-                Text("Updated: \(snapshot.fetchedAt.formatted(date: .omitted, time: .standard))")
+                Text("Updated: \(updatedLabel(primary: model.lastManualRefreshAt ?? model.coordinator.state.lastRefreshAt, fallback: snapshot.fetchedAt))")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             } else {
@@ -87,5 +87,13 @@ struct MenuContentView: View {
             return "\(Int(window.used))/\(Int(window.limit)) used"
         }
         return "\(Int(window.remaining))/\(Int(window.limit)) left"
+    }
+
+    private func updatedLabel(primary: Date?, fallback: Date) -> String {
+        let date = primary ?? fallback
+        let formatter = DateFormatter()
+        formatter.locale = .current
+        formatter.dateFormat = "HH:mm:ss.SSS"
+        return formatter.string(from: date)
     }
 }

@@ -10,4 +10,12 @@ final class UsageRequestBuilderTests: XCTestCase {
         XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer token")
         XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "application/json")
     }
+
+    func testBuildsNonCachedRequestForRealRefresh() throws {
+        let request = try UsageRequestBuilder().makeRequest(accessToken: "token")
+
+        XCTAssertEqual(request.cachePolicy, .reloadIgnoringLocalCacheData)
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Cache-Control"), "no-cache")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Pragma"), "no-cache")
+    }
 }

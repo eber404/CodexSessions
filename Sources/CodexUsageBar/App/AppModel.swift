@@ -9,6 +9,7 @@ final class AppModel: ObservableObject {
     @Published var showUsedInsteadOfRemaining: Bool = false
     @Published var activeSourceLabel: String = "Detecting..."
     @Published var authMessage: String?
+    @Published var lastManualRefreshAt: Date?
 
     let tokenStore: KeychainTokenStore
     let coordinator: RefreshCoordinator
@@ -50,6 +51,7 @@ final class AppModel: ObservableObject {
     }
 
     func refreshNow() {
+        lastManualRefreshAt = Date()
         Task {
             await coordinator.refreshNow()
         }

@@ -13,8 +13,11 @@ public struct UsageRequestBuilder {
         }
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+        request.setValue("no-cache", forHTTPHeaderField: "Pragma")
         request.timeoutInterval = 30
         return request
     }
