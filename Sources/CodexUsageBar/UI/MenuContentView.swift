@@ -80,7 +80,7 @@ struct MenuContentView: View {
                 }
             }
         }
-        .padding(.horizontal, 10)
+        .padding(.horizontal, 8)
         .padding(.vertical, 8)
         .frame(width: 360)
     }
@@ -147,13 +147,13 @@ private struct HoverMenuRowButton<Content: View>: View {
                     .foregroundStyle(.primary)
                 Spacer(minLength: 0)
             }
-            .padding(.vertical, 5)
+            .padding(.vertical, 4)
             .contentShape(Rectangle())
-            .background(
+            .background {
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .fill(isHovering ? Color.primary.opacity(0.12) : Color.clear)
-            )
-            .padding(.horizontal, -4)
+                    .padding(.horizontal, -2)
+            }
         }
         .buttonStyle(.plain)
         .onHover { isHovering = $0 }
