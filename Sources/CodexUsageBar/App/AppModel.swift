@@ -70,7 +70,11 @@ final class AppModel: ObservableObject {
 
         loginItemManager.setEnabled(launchAtLoginEnabled)
 
-        keepAliveEnabled = userDefaults.bool(forKey: PreferenceKey.keepAliveEnabled)
+        if userDefaults.object(forKey: PreferenceKey.keepAliveEnabled) == nil {
+            keepAliveEnabled = false
+        } else {
+            keepAliveEnabled = userDefaults.bool(forKey: PreferenceKey.keepAliveEnabled)
+        }
         if userDefaults.object(forKey: PreferenceKey.firstHour) != nil {
             firstHour = userDefaults.integer(forKey: PreferenceKey.firstHour)
         }
@@ -213,8 +217,7 @@ final class AppModel: ObservableObject {
     }
 
     func logout() {
-        keepAliveTask?.cancel()
-        sessionKeepAlive = nil
+        stopSessionKeepAlive()
         disconnectOAuth()
         isSignedOut = true
         authMessage = nil
