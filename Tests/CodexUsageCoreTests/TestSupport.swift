@@ -34,3 +34,13 @@ final class MockHTTPClient: HTTPClient, @unchecked Sendable {
         return (responseData, response)
     }
 }
+
+final class MockChatCompletionClient: ChatCompletionClientProtocol, @unchecked Sendable {
+    public private(set) var pingCount = 0
+
+    public init() {}
+
+    public func sendPing(accessToken: String) async throws {
+        pingCount += 1
+    }
+}

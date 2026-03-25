@@ -6,7 +6,11 @@ public enum ChatCompletionError: Error {
     case invalidResponse
 }
 
-public struct ChatCompletionClient {
+public protocol ChatCompletionClientProtocol: Sendable {
+    func sendPing(accessToken: String) async throws
+}
+
+public struct ChatCompletionClient: ChatCompletionClientProtocol {
     private let httpClient: HTTPClient
     private let baseURL = URL(string: "https://api.openai.com")!
 
