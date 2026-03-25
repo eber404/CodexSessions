@@ -34,6 +34,7 @@ final class AppModel: ObservableObject {
     private let userDefaults: UserDefaults
     private let loginItemManager: LoginItemManaging
     private var sessionKeepAlive: SessionKeepAlive?
+    private var keepAliveTask: Task<Void, Never>?
 
     init(
         tokenStore: KeychainTokenStore = KeychainTokenStore(),
@@ -73,15 +74,16 @@ final class AppModel: ObservableObject {
     }
 
     private func startSessionKeepAlive() {
+        keepAliveTask?.cancel()
         guard !isSignedOut else { return }
         let tokenProvider = AccessTokenProvider(tokenStore: tokenStore, refresher: oauthSession)
         let client = ChatCompletionClient()
         sessionKeepAlive = SessionKeepAlive(client: client)
-        Task {
-            let source = try? AuthDiscovery().resolve(preferredPath: preferredAuthPath.isEmpty ? nil : preferredAuthPath)
-            if let source = source, let token = try? await tokenProvider.accessToken(for: source) {
-                await sessionKeepAlive?.start(accessToken: token)
-            }
+        keepAliveTask = Task {
+            let resolver = AuthResolver(discovery: AuthDiscovery(), tokenStore: tokenStore)
+            let source = try? resolver.resolve(preferredPath: preferredAuthPath.isEmpty ? nil : preferredAuthPath)
+            guard !Task.isCancelled, let source = source, let token = try? await tokenProvider.accessToken(for: source) else { return }
+            await sessionKeepAlive?.start(accessToken: token)
         }
     }
 
@@ -174,6 +176,7 @@ final class AppModel: ObservableObject {
     }
 
     func logout() {
+        keepAliveTask?.cancel()
         disconnectOAuth()
         isSignedOut = true
         authMessage = nil
