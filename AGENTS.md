@@ -18,7 +18,10 @@ The app prioritizes fast visual feedback and minimal setup.
 - Show usage as percentage (0% to 100%) for short and weekly windows.
 - Keep menu actions simple, full-width, and quick to scan.
 - Show Signin action only when user is effectively logged out.
-- Keep refresh explicit and immediate from the menu.
+- Keep refresh explicit and immediate from the menu (`Updated at` + refresh icon).
+- Keep Settings compact and focused on essentials.
+- Offer refresh interval presets of 1, 3, and 5 minutes.
+- Keep logout in Settings, not in the main menu action list.
 
 ## High-level architecture
 
@@ -38,6 +41,7 @@ The app prioritizes fast visual feedback and minimal setup.
 - Keep last known usage snapshot on transient failures.
 - Treat API schema changes as parser responsibilities, not UI failures.
 - Force real refresh requests (avoid stale cached responses).
+- Keep updated timestamp in sync with manual and interval refreshes.
 
 ## Security posture
 
