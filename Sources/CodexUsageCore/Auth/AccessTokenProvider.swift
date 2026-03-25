@@ -4,6 +4,7 @@ public enum AccessTokenProviderError: Error {
     case fileReadFailed
     case missingAccessToken
     case refreshTokenMissing
+    case expiredAccessToken
 }
 
 public protocol AccessTokenProviding: Sendable {
@@ -76,30 +77,56 @@ public struct AccessTokenProvider: AccessTokenProviding {
             throw AccessTokenProviderError.missingAccessToken
         }
 
-        if let token = dictionary["access_token"] as? String, !token.isEmpty {
-            return token
-        }
-        if let token = dictionary["id_token"] as? String, !token.isEmpty {
-            return token
-        }
-        if let credentials = dictionary["credentials"] as? [String: Any],
-           let token = credentials["access_token"] as? String,
-           !token.isEmpty {
-            return token
+        var token: String?
+
+        if let t = dictionary["access_token"] as? String, !t.isEmpty {
+            token = t
+        } else if let t = dictionary["id_token"] as? String, !t.isEmpty {
+            token = t
+        } else if let credentials = dictionary["credentials"] as? [String: Any],
+                  let t = credentials["access_token"] as? String, !t.isEmpty {
+            token = t
+        } else if let openAI = dictionary["openai"] as? [String: Any],
+                  let t = openAI["access"] as? String, !t.isEmpty {
+            token = t
+        } else if let tokens = dictionary["tokens"] as? [String: Any],
+                  let t = tokens["access_token"] as? String, !t.isEmpty {
+            token = t
         }
 
-        if let openAI = dictionary["openai"] as? [String: Any],
-           let token = openAI["access"] as? String,
-           !token.isEmpty {
-            return token
+        guard let accessToken = token else {
+            throw AccessTokenProviderError.missingAccessToken
         }
 
-        if let tokens = dictionary["tokens"] as? [String: Any],
-           let token = tokens["access_token"] as? String,
-           !token.isEmpty {
-            return token
+        if isTokenExpired(accessToken) {
+            throw AccessTokenProviderError.expiredAccessToken
         }
 
-        throw AccessTokenProviderError.missingAccessToken
+        return accessToken
+    }
+
+    private func isTokenExpired(_ token: String) -> Bool {
+        let parts = token.split(separator: ".")
+        guard parts.count >= 2,
+              let payloadData = Data(base64Encoded: String(parts[1]).base64Padded()) else {
+            return false
+        }
+
+        guard let payload = try? JSONSerialization.jsonObject(with: payloadData) as? [String: Any],
+              let exp = payload["exp"] as? TimeInterval else {
+            return false
+        }
+
+        return exp <= Date().timeIntervalSince1970
+    }
+}
+
+private extension String {
+    func base64Padded() -> String {
+        let remainder = count % 4
+        if remainder > 0 {
+            return self + String(repeating: "=", count: 4 - remainder)
+        }
+        return self
     }
 }

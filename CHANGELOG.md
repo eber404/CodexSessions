@@ -5,7 +5,8 @@ All notable changes to CodexSessions are documented in this file.
 ## [1.0.2] - 2026-03-25
 
 ### Fixed
-- Fixed Codex CLI auth file parsing to recognize `tokens.access_token` structure, resolving stuck "Connecting..." state for Codex CLI users.
+- Fixed Codex CLI auth file parsing to recognize `tokens.access_token` structure.
+- Added token expiration detection for local auth files - now automatically falls back to OAuth when Codex CLI token is expired.
 
 ## [1.0.1] - 2026-03-25
 

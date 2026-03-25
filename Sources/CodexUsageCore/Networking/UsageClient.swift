@@ -54,21 +54,25 @@ public struct UsageClient: UsageService {
     }
 
     public func fetchUsage() async throws -> UsageSnapshot {
-        let token = try await tokenProvider.accessToken(for: source)
-        let request = try requestBuilder.makeRequest(accessToken: token)
-        let (data, response) = try await httpClient.data(for: request)
+        do {
+            let token = try await tokenProvider.accessToken(for: source)
+            let request = try requestBuilder.makeRequest(accessToken: token)
+            let (data, response) = try await httpClient.data(for: request)
 
-        switch response.statusCode {
-        case 200:
-            return try parser.parse(data: data, sourceLabel: source.sourceLabel)
-        case 401, 403:
+            switch response.statusCode {
+            case 200:
+                return try parser.parse(data: data, sourceLabel: source.sourceLabel)
+            case 401, 403:
+                throw UsageClientError.unauthorized
+            case 429:
+                throw UsageClientError.rateLimited
+            case 500 ... 599:
+                throw UsageClientError.serverError
+            default:
+                throw UsageClientError.invalidResponse
+            }
+        } catch AccessTokenProviderError.expiredAccessToken {
             throw UsageClientError.unauthorized
-        case 429:
-            throw UsageClientError.rateLimited
-        case 500 ... 599:
-            throw UsageClientError.serverError
-        default:
-            throw UsageClientError.invalidResponse
         }
     }
 }
