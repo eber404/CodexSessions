@@ -49,6 +49,10 @@ public final class RefreshCoordinator: ObservableObject {
         refreshTask = nil
     }
 
+    public func clearState() {
+        state = RefreshState()
+    }
+
     public func refreshNow() async {
         state.lastRefreshAt = Date()
         state.isLoading = true

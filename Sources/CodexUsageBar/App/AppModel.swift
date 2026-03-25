@@ -10,6 +10,7 @@ final class AppModel: ObservableObject {
     @Published var activeSourceLabel: String = "Detecting..."
     @Published var authMessage: String?
     @Published var lastManualRefreshAt: Date?
+    @Published var isSignedOut: Bool = false
 
     let tokenStore: KeychainTokenStore
     let coordinator: RefreshCoordinator
@@ -24,14 +25,23 @@ final class AppModel: ObservableObject {
 
     func start() {
         rebuildServiceAndRefresh()
-        coordinator.startAutoRefresh(interval: refreshIntervalSeconds)
     }
 
     func updateRefreshInterval() {
-        coordinator.startAutoRefresh(interval: refreshIntervalSeconds)
+        if !isSignedOut {
+            coordinator.startAutoRefresh(interval: refreshIntervalSeconds)
+        }
     }
 
     func rebuildServiceAndRefresh() {
+        if isSignedOut {
+            coordinator.stopAutoRefresh()
+            coordinator.service = EmptyUsageService()
+            coordinator.clearState()
+            activeSourceLabel = ""
+            return
+        }
+
         do {
             let resolver = AuthResolver(discovery: AuthDiscovery(), tokenStore: tokenStore)
             let path = preferredAuthPath.isEmpty ? nil : preferredAuthPath
@@ -41,6 +51,7 @@ final class AppModel: ObservableObject {
                 source: source,
                 tokenProvider: AccessTokenProvider(tokenStore: tokenStore, refresher: oauthSession)
             )
+            coordinator.startAutoRefresh(interval: refreshIntervalSeconds)
         } catch {
             authMessage = "Unable to resolve auth source: \(error)"
         }
@@ -51,6 +62,7 @@ final class AppModel: ObservableObject {
     }
 
     func refreshNow() {
+        guard !isSignedOut else { return }
         lastManualRefreshAt = Date()
         Task {
             await coordinator.refreshNow()
@@ -62,6 +74,7 @@ final class AppModel: ObservableObject {
             do {
                 let record = try await oauthSession.startOAuth()
                 try tokenStore.saveTokenRecord(record, account: KeychainTokenStore.defaultAccount)
+                isSignedOut = false
                 authMessage = "OAuth connected"
                 rebuildServiceAndRefresh()
             } catch {
@@ -73,6 +86,7 @@ final class AppModel: ObservableObject {
     func saveManualToken(_ token: String) {
         do {
             try tokenStore.saveAccessToken(token, account: KeychainTokenStore.defaultAccount)
+            isSignedOut = false
             authMessage = "Token saved"
             rebuildServiceAndRefresh()
         } catch {
@@ -83,11 +97,17 @@ final class AppModel: ObservableObject {
     func disconnectOAuth() {
         do {
             try tokenStore.removeAccessToken(account: KeychainTokenStore.defaultAccount)
-            authMessage = "OAuth token removed"
-            rebuildServiceAndRefresh()
         } catch {
             authMessage = "Failed to remove token: \(error)"
         }
+    }
+
+    func logout() {
+        disconnectOAuth()
+        isSignedOut = true
+        authMessage = nil
+        lastManualRefreshAt = nil
+        rebuildServiceAndRefresh()
     }
 }
 
