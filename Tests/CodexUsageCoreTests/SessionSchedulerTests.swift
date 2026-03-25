@@ -20,7 +20,7 @@ final class SessionSchedulerTests: XCTestCase {
     func testCalculateTimelineBlocks() {
         let scheduler = SessionScheduler()
         let blocks = scheduler.calculateTimelineBlocks(firstHour: 9)
-        XCTAssertEqual(blocks.count, 5) // 5 blocks of 5h = 25h covers next day
+        XCTAssertEqual(blocks.count, 6) // 6 blocks of 5h = 30h covers all intervals
         XCTAssertTrue(blocks.first?.isNext == true) // First block is next
     }
 }

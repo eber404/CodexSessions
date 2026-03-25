@@ -18,7 +18,7 @@ public struct TimeBlock {
 public final class SessionScheduler {
     private let calendar = Calendar.current
     private let intervalHours = 5
-    private let timelineBlockCount = 5
+    private let timelineBlockCount = 6
 
     public init() {}
 
