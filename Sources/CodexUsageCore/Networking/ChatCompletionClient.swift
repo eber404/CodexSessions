@@ -18,6 +18,7 @@ public struct ChatCompletionClient {
 
     public func sendPing(accessToken: String) async throws {
         let request = ChatCompletionRequest(
+            model: "gpt-4o",
             messages: [ChatCompletionRequest.Message(role: "user", content: "oi")]
         )
         let body = try JSONEncoder().encode(request)
