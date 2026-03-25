@@ -5,7 +5,7 @@ final class SessionKeepAliveTests: XCTestCase {
     func testStartsAndStops() async throws {
         let mockClient = MockChatCompletionClient()
         let keepAlive = SessionKeepAlive(client: mockClient)
-        await keepAlive.start()
+        await keepAlive.start(accessToken: "test-token")
         try await Task.sleep(nanoseconds: 100_000_000)
         await keepAlive.stop()
         XCTAssertTrue(mockClient.pingCount > 0)

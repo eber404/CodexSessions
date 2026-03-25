@@ -9,12 +9,12 @@ public actor SessionKeepAlive {
         self.client = client
     }
 
-    public func start() {
+    public func start(accessToken: String) {
         stop()
         task = Task { [weak self] in
             guard let self else { return }
             while !Task.isCancelled {
-                await self.ping()
+                await self.ping(accessToken: accessToken)
                 try? await Task.sleep(nanoseconds: UInt64(self.intervalSeconds * 1_000_000_000))
             }
         }
@@ -25,9 +25,9 @@ public actor SessionKeepAlive {
         task = nil
     }
 
-    private func ping() async {
+    private func ping(accessToken: String) async {
         do {
-            try await client.sendPing(accessToken: "")
+            try await client.sendPing(accessToken: accessToken)
         } catch {
             print("SessionKeepAlive ping failed: \(error)")
         }
