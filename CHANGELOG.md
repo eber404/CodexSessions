@@ -2,6 +2,18 @@
 
 All notable changes to CodexSessions are documented in this file.
 
+## [Unreleased]
+
+### Added
+- Session Keep-Alive feature: configurable ping to keep Codex sessions active
+  - Toggle to enable/disable in Settings
+  - First hour of day slider (0-23h) to set initial ping time
+  - Visual timeline showing 5h session intervals
+  - 5-hour interval pings via Chat Completions API
+
+### Changed
+- Settings UI now includes Session Keep-Alive configuration section
+
 ## [1.0.3] - 2026-03-25
 
 ### Fixed
