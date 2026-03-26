@@ -92,20 +92,6 @@ struct SettingsView: View {
                         firstMinute: model.firstMinute
                     )
                     SessionTimelineViewWithMinutes(sessionBlocks: blocks)
-
-                    if model.keepAliveEnabled {
-                        let nextPing = scheduler.calculateNextPing(
-                            firstHour: model.firstHour,
-                            firstMinute: model.firstMinute
-                        )
-                        Text("Next ping: \(timeFormatter.string(from: nextPing))")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    } else {
-                        Text("Keep-alive is off. Enable it to start automatic pings.")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
                 }
             }
 
