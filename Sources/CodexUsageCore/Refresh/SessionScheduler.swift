@@ -34,6 +34,27 @@ public struct TimeBlockWithMinute: Identifiable {
     }
 }
 
+public enum SessionState: String {
+    case past
+    case current
+    case future
+}
+
+public struct SessionBlock: Identifiable {
+    public let id = UUID()
+    public let startHour: Int
+    public let startMinute: Int
+    public let label: String
+    public let state: SessionState
+
+    public init(startHour: Int, startMinute: Int, label: String, state: SessionState) {
+        self.startHour = startHour
+        self.startMinute = startMinute
+        self.label = label
+        self.state = state
+    }
+}
+
 public final class SessionScheduler {
     private let calendar = Calendar.current
     private let intervalHours = 5
@@ -134,6 +155,50 @@ public final class SessionScheduler {
             blocks.append(block)
 
             currentHour = (currentHour + intervalHours) % 24
+        }
+
+        return blocks
+    }
+
+    public func calculateSessionBlocks(firstHour: Int, firstMinute: Int) -> [SessionBlock] {
+        let now = Date()
+        let currentHour = calendar.component(.hour, from: now)
+        let currentMinute = calendar.component(.minute, from: now)
+        let currentTotalMinutes = currentHour * 60 + currentMinute
+        let firstTotalMinutes = firstHour * 60 + firstMinute
+
+        var blocks: [SessionBlock] = []
+        var sessionHour = firstHour
+        var sessionMinute = firstMinute
+
+        for i in 0..<timelineBlockCount {
+            let sessionTotalMinutes = sessionHour * 60 + sessionMinute
+
+            let state: SessionState
+            if sessionTotalMinutes < currentTotalMinutes {
+                state = .past
+            } else if sessionTotalMinutes == currentTotalMinutes {
+                state = .current
+            } else {
+                state = .future
+            }
+
+            let label: String
+            if i == timelineBlockCount - 1 {
+                label = String(format: "%02d:%02d", firstHour, firstMinute)
+            } else {
+                label = String(format: "%02d:%02d", sessionHour, sessionMinute)
+            }
+
+            let block = SessionBlock(
+                startHour: sessionHour,
+                startMinute: sessionMinute,
+                label: label,
+                state: state
+            )
+            blocks.append(block)
+
+            sessionHour = (sessionHour + intervalHours) % 24
         }
 
         return blocks

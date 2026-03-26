@@ -87,15 +87,11 @@ struct SettingsView: View {
                         }
                     }
 
-                    let blocks = scheduler.calculateTimelineBlocksWithMinutes(
+                    let blocks = scheduler.calculateSessionBlocks(
                         firstHour: model.firstHour,
                         firstMinute: model.firstMinute
                     )
-                    SessionTimelineViewWithMinutes(
-                        blocks: blocks,
-                        firstHour: model.firstHour,
-                        firstMinute: model.firstMinute
-                    )
+                    SessionTimelineViewWithMinutes(sessionBlocks: blocks)
 
                     if model.keepAliveEnabled {
                         let nextPing = scheduler.calculateNextPing(

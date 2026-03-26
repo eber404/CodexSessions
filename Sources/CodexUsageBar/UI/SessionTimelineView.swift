@@ -12,11 +12,7 @@ public struct SessionTimelineView: View {
     }
 
     public var body: some View {
-        timelineView
-    }
-
-    private var timelineView: some View {
-        return VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 8) {
             Text("Today's timeline")
                 .font(.caption)
                 .foregroundColor(.secondary)
@@ -44,62 +40,56 @@ public struct SessionTimelineView: View {
 }
 
 public struct SessionTimelineViewWithMinutes: View {
-    let blocks: [TimeBlockWithMinute]
-    let firstHour: Int
-    let firstMinute: Int
+    let sessionBlocks: [SessionBlock]
 
-    public init(blocks: [TimeBlockWithMinute], firstHour: Int, firstMinute: Int) {
-        self.blocks = blocks
-        self.firstHour = firstHour
-        self.firstMinute = firstMinute
+    public init(sessionBlocks: [SessionBlock]) {
+        self.sessionBlocks = sessionBlocks
     }
 
     public var body: some View {
-        timelineViewWithMinutes
-    }
-
-    private var timelineViewWithMinutes: some View {
-        return VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 8) {
             Text("Session intervals")
                 .font(.caption)
                 .foregroundColor(.secondary)
 
             HStack(spacing: 4) {
-                ForEach(Array(blocks.enumerated()), id: \.offset) { index, block in
-                    let isFirst = index == 0
-                    let isLast = index == blocks.count - 1
-                    let isCompleted = !block.isNext
+                ForEach(Array(sessionBlocks.enumerated()), id: \.offset) { index, block in
+                    let isLast = index == sessionBlocks.count - 1
 
                     VStack(spacing: 4) {
                         ZStack {
                             RoundedRectangle(cornerRadius: 6)
-                                .fill(isCompleted ? Color.green : Color.clear)
-                                .frame(width: 40, height: 40)
+                                .fill(block.state == .past || block.state == .current ? Color.green : Color.clear)
+                                .frame(width: 44, height: 44)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 6)
-                                        .stroke(isCompleted ? Color.green : Color.gray.opacity(0.4), lineWidth: 2)
-                                        .frame(width: 40, height: 40)
+                                        .stroke(block.state == .future ? Color.gray.opacity(0.4) : Color.clear, lineWidth: 2)
+                                        .frame(width: 44, height: 44)
                                 )
 
                             Text(block.label)
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(isCompleted ? .white : .secondary)
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(block.state == .future ? .secondary : .white)
                         }
 
-                        if isCompleted {
+                        if block.state == .past {
                             Image(systemName: "checkmark.circle.fill")
                                 .font(.system(size: 10))
                                 .foregroundColor(.green)
+                        } else if block.state == .current {
+                            Image(systemName: "circle.fill")
+                                .font(.system(size: 8))
+                                .foregroundColor(.green)
                         } else {
                             Circle()
-                                .fill(Color.green.opacity(0.3))
+                                .fill(Color.gray.opacity(0.3))
                                 .frame(width: 8, height: 8)
                         }
                     }
 
                     if !isLast {
                         Rectangle()
-                            .fill(isCompleted ? Color.green : Color.gray.opacity(0.3))
+                            .fill(block.state == .past ? Color.green : Color.gray.opacity(0.3))
                             .frame(height: 3)
                             .frame(maxWidth: .infinity)
                     }
