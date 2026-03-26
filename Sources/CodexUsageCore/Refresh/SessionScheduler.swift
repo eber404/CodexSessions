@@ -111,22 +111,23 @@ public final class SessionScheduler {
     public func calculateTimelineBlocksWithMinutes(firstHour: Int, firstMinute: Int) -> [TimeBlockWithMinute] {
         var blocks: [TimeBlockWithMinute] = []
         var currentHour = firstHour
-        var currentMinute = firstMinute
+        let currentMinute = firstMinute
 
         for i in 0..<timelineBlockCount {
-            var endMinute = currentMinute
-            var endHour = (currentHour + intervalHours) % 24
-            if endHour == 0 {
-                endHour = 24
-            }
             let isNext = i == 0
+            let label: String
 
-            let label = String(format: "%02d:%02d", currentHour, currentMinute)
+            if i == timelineBlockCount - 1 {
+                label = String(format: "%02d:%02d", firstHour, firstMinute)
+            } else {
+                label = String(format: "%02d:%02d", currentHour, currentMinute)
+            }
+
             let block = TimeBlockWithMinute(
                 startHour: currentHour,
                 startMinute: currentMinute,
-                endHour: endHour % 24,
-                endMinute: endMinute,
+                endHour: (currentHour + intervalHours) % 24,
+                endMinute: currentMinute,
                 label: label,
                 isNext: isNext
             )
