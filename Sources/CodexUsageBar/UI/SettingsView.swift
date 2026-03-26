@@ -55,27 +55,36 @@ struct SettingsView: View {
                             .fontWeight(.semibold)
                     }
 
-                    HStack(spacing: 16) {
-                        Picker("Hour", selection: Binding(
-                            get: { model.firstHour },
-                            set: { model.setFirstHour($0) }
-                        )) {
-                            ForEach(0..<24, id: \.self) { hour in
-                                Text(String(format: "%02d", hour)).tag(hour)
-                            }
+                    VStack(spacing: 8) {
+                        HStack {
+                            Text("Hour")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Slider(
+                                value: Binding(
+                                    get: { Double(model.firstHour) },
+                                    set: { model.setFirstHour(Int($0)) }
+                                ),
+                                in: 0...23,
+                                step: 1
+                            )
+                            .accessibilityLabel("Hour picker")
                         }
-                        .labelsHidden()
 
-                        Picker("Minute", selection: Binding(
-                            get: { model.firstMinute },
-                            set: { model.setFirstMinute($0) }
-                        )) {
-                            Text("00").tag(0)
-                            Text("15").tag(15)
-                            Text("30").tag(30)
-                            Text("45").tag(45)
+                        HStack {
+                            Text("Minute")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Slider(
+                                value: Binding(
+                                    get: { Double(model.firstMinute) },
+                                    set: { model.setFirstMinute(Int($0)) }
+                                ),
+                                in: 0...55,
+                                step: 5
+                            )
+                            .accessibilityLabel("Minute picker")
                         }
-                        .labelsHidden()
                     }
 
                     let blocks = scheduler.calculateTimelineBlocksWithMinutes(
