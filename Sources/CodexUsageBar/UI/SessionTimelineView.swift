@@ -59,23 +59,23 @@ public struct SessionTimelineViewWithMinutes: View {
                     VStack(spacing: 4) {
                         ZStack {
                             RoundedRectangle(cornerRadius: 6)
-                                .fill(block.state == .past || block.state == .current ? Color.green : Color.clear)
+                                .fill(Color.gray.opacity(0.2))
                                 .frame(width: 44, height: 44)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 6)
-                                        .stroke(block.state == .future ? Color.gray.opacity(0.4) : Color.clear, lineWidth: 2)
+                                        .stroke(Color.gray.opacity(0.4), lineWidth: 2)
                                         .frame(width: 44, height: 44)
                                 )
 
                             Text(block.label)
                                 .font(.system(size: 11, weight: .medium))
-                                .foregroundColor(block.state == .future ? .secondary : .white)
+                                .foregroundColor(.secondary)
                         }
                     }
 
                     if !isLast {
                         Rectangle()
-                            .fill(block.state == .past ? Color.green : Color.gray.opacity(0.3))
+                            .fill(Color.gray.opacity(0.3))
                             .frame(height: 3)
                             .frame(maxWidth: .infinity)
                     }
