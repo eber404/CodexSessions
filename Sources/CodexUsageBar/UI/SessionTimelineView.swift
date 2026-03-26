@@ -48,7 +48,7 @@ public struct SessionTimelineViewWithMinutes: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Session intervals")
+            Text("Session schedule")
                 .font(.caption)
                 .foregroundColor(.secondary)
 
