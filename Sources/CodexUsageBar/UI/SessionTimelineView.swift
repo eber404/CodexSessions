@@ -59,49 +59,52 @@ public struct SessionTimelineViewWithMinutes: View {
     }
 
     private var timelineViewWithMinutes: some View {
-        return VStack(alignment: .leading, spacing: 12) {
+        return VStack(alignment: .leading, spacing: 8) {
             Text("Session intervals")
                 .font(.caption)
                 .foregroundColor(.secondary)
 
-            GeometryReader { geometry in
-                let blockWidth = geometry.size.width / CGFloat(blocks.count)
+            HStack(spacing: 4) {
+                ForEach(Array(blocks.enumerated()), id: \.offset) { index, block in
+                    let isFirst = index == 0
+                    let isLast = index == blocks.count - 1
+                    let isCompleted = !block.isNext
 
-                ZStack(alignment: .leading) {
-                    Rectangle()
-                        .fill(Color.gray.opacity(0.2))
-                        .frame(height: 8)
-                        .clipShape(Capsule())
-
-                    HStack(spacing: 0) {
-                        ForEach(Array(blocks.enumerated()), id: \.offset) { index, block in
-                            let isFirst = index == 0
-                            let isLast = index == blocks.count - 1
-
-                            Circle()
-                                .fill(block.isNext ? Color.green : Color.blue)
-                                .frame(width: block.isNext ? 16 : 12, height: block.isNext ? 16 : 12)
-                                .shadow(color: block.isNext ? Color.green.opacity(0.5) : .clear, radius: block.isNext ? 6 : 0)
-                                .offset(x: CGFloat(index) * blockWidth + blockWidth / 2 - (block.isNext ? 8 : 6))
-                        }
-                    }
-
-                    HStack(spacing: 0) {
-                        ForEach(Array(blocks.enumerated()), id: \.offset) { index, block in
-                            let isFirst = index == 0
-                            let isLast = index == blocks.count - 1
+                    VStack(spacing: 4) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(isCompleted ? Color.green : Color.clear)
+                                .frame(width: 40, height: 40)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .stroke(isCompleted ? Color.green : Color.gray.opacity(0.4), lineWidth: 2)
+                                        .frame(width: 40, height: 40)
+                                )
 
                             Text(block.label)
-                                .font(.system(size: 9, weight: block.isNext ? .semibold : .regular))
-                                .foregroundColor(block.isNext ? .primary : .secondary)
-                                .frame(width: blockWidth)
-                                .offset(x: CGFloat(index) * blockWidth)
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundColor(isCompleted ? .white : .secondary)
+                        }
+
+                        if isCompleted {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 10))
+                                .foregroundColor(.green)
+                        } else {
+                            Circle()
+                                .fill(Color.green.opacity(0.3))
+                                .frame(width: 8, height: 8)
                         }
                     }
-                    .offset(y: 18)
+
+                    if !isLast {
+                        Rectangle()
+                            .fill(isCompleted ? Color.green : Color.gray.opacity(0.3))
+                            .frame(height: 3)
+                            .frame(maxWidth: .infinity)
+                    }
                 }
             }
-            .frame(height: 44)
         }
         .padding()
         .background(Color(nsColor: .controlBackgroundColor))
