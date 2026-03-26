@@ -15,6 +15,25 @@ public struct TimeBlock {
     }
 }
 
+public struct TimeBlockWithMinute: Identifiable {
+    public let id = UUID()
+    public let startHour: Int
+    public let startMinute: Int
+    public let endHour: Int
+    public let endMinute: Int
+    public let label: String
+    public let isNext: Bool
+
+    public init(startHour: Int, startMinute: Int, endHour: Int, endMinute: Int, label: String, isNext: Bool) {
+        self.startHour = startHour
+        self.startMinute = startMinute
+        self.endHour = endHour
+        self.endMinute = endMinute
+        self.label = label
+        self.isNext = isNext
+    }
+}
+
 public final class SessionScheduler {
     private let calendar = Calendar.current
     private let intervalHours = 5
@@ -39,15 +58,31 @@ public final class SessionScheduler {
     }
 
     public func calculateNextPing(firstHour: Int) -> Date {
+        calculateNextPing(firstHour: firstHour, firstMinute: 0)
+    }
+
+    public func calculateNextPing(firstHour: Int, firstMinute: Int) -> Date {
         let now = Date()
         let currentHour = calendar.component(.hour, from: now)
+        let currentMinute = calendar.component(.minute, from: now)
 
         var hoursUntilNext = firstHour - currentHour
-        if hoursUntilNext <= 0 {
+        var minutesUntilNext = firstMinute - currentMinute
+
+        if minutesUntilNext < 0 {
+            minutesUntilNext += 60
+            hoursUntilNext -= 1
+        }
+
+        if hoursUntilNext < 0 || (hoursUntilNext == 0 && minutesUntilNext <= 0) {
             hoursUntilNext += 24
         }
 
-        return calendar.date(byAdding: .hour, value: hoursUntilNext, to: now) ?? now
+        var components = DateComponents()
+        components.hour = hoursUntilNext
+        components.minute = minutesUntilNext
+
+        return calendar.date(byAdding: components, to: now) ?? now
     }
 
     public func calculateTimelineBlocks(firstHour: Int) -> [TimeBlock] {
@@ -62,6 +97,36 @@ public final class SessionScheduler {
             let block = TimeBlock(
                 startHour: currentHour,
                 endHour: endHour,
+                label: label,
+                isNext: isNext
+            )
+            blocks.append(block)
+
+            currentHour = (currentHour + intervalHours) % 24
+        }
+
+        return blocks
+    }
+
+    public func calculateTimelineBlocksWithMinutes(firstHour: Int, firstMinute: Int) -> [TimeBlockWithMinute] {
+        var blocks: [TimeBlockWithMinute] = []
+        var currentHour = firstHour
+        var currentMinute = firstMinute
+
+        for i in 0..<timelineBlockCount {
+            var endMinute = currentMinute
+            var endHour = (currentHour + intervalHours) % 24
+            if endHour == 0 {
+                endHour = 24
+            }
+            let isNext = i == 0
+
+            let label = String(format: "%02d:%02d", currentHour, currentMinute)
+            let block = TimeBlockWithMinute(
+                startHour: currentHour,
+                startMinute: currentMinute,
+                endHour: endHour % 24,
+                endMinute: endMinute,
                 label: label,
                 isNext: isNext
             )

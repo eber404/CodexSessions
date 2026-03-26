@@ -12,8 +12,6 @@ struct SettingsView: View {
         return f
     }()
 
-    private static let hoursInDay: ClosedRange<Double> = 0...23
-
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             sectionBlock(title: "Refresh Interval") {
@@ -51,27 +49,50 @@ struct SettingsView: View {
 
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        Text("First hour of day:")
+                        Text("First ping at:")
                         Spacer()
-                        Text(String(format: "%02d:00", model.firstHour))
+                        Text(String(format: "%02d:%02d", model.firstHour, model.firstMinute))
                             .fontWeight(.semibold)
                     }
 
-                    Slider(
-                        value: Binding(
-                            get: { Double(model.firstHour) },
-                            set: { model.setFirstHour(Int($0)) }
-                        ),
-                        in: Self.hoursInDay,
-                        step: 1
-                    )
-                    .accessibilityLabel("First hour of day")
+                    HStack(spacing: 16) {
+                        Picker("Hour", selection: Binding(
+                            get: { model.firstHour },
+                            set: { model.setFirstHour($0) }
+                        )) {
+                            ForEach(0..<24, id: \.self) { hour in
+                                Text(String(format: "%02d", hour)).tag(hour)
+                            }
+                        }
+                        .labelsHidden()
 
-                    let blocks = scheduler.calculateTimelineBlocks(firstHour: model.firstHour)
-                    SessionTimelineView(blocks: blocks, firstHour: model.firstHour)
+                        Picker("Minute", selection: Binding(
+                            get: { model.firstMinute },
+                            set: { model.setFirstMinute($0) }
+                        )) {
+                            Text("00").tag(0)
+                            Text("15").tag(15)
+                            Text("30").tag(30)
+                            Text("45").tag(45)
+                        }
+                        .labelsHidden()
+                    }
+
+                    let blocks = scheduler.calculateTimelineBlocksWithMinutes(
+                        firstHour: model.firstHour,
+                        firstMinute: model.firstMinute
+                    )
+                    SessionTimelineViewWithMinutes(
+                        blocks: blocks,
+                        firstHour: model.firstHour,
+                        firstMinute: model.firstMinute
+                    )
 
                     if model.keepAliveEnabled {
-                        let nextPing = scheduler.calculateNextPing(firstHour: model.firstHour)
+                        let nextPing = scheduler.calculateNextPing(
+                            firstHour: model.firstHour,
+                            firstMinute: model.firstMinute
+                        )
                         Text("Next ping: \(timeFormatter.string(from: nextPing))")
                             .font(.caption)
                             .foregroundColor(.secondary)

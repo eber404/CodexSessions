@@ -6,14 +6,16 @@ public actor SessionKeepAlive {
     private var task: Task<Void, Never>?
     private var isEnabled: Bool = false
     private var firstHour: Int = 9
+    private var firstMinute: Int = 0
 
     public init(client: ChatCompletionClientProtocol) {
         self.client = client
     }
 
-    public func configure(isEnabled: Bool, firstHour: Int) {
+    public func configure(isEnabled: Bool, firstHour: Int, firstMinute: Int = 0) {
         self.isEnabled = isEnabled
         self.firstHour = firstHour
+        self.firstMinute = firstMinute
     }
 
     public func start(accessToken: String) {
@@ -49,13 +51,21 @@ public actor SessionKeepAlive {
         let calendar = Calendar.current
         let now = Date()
         let currentHour = calendar.component(.hour, from: now)
+        let currentMinute = calendar.component(.minute, from: now)
 
         var hoursUntil = self.firstHour - currentHour
-        if hoursUntil < 0 {
+        var minutesUntil = self.firstMinute - currentMinute
+
+        if minutesUntil < 0 {
+            minutesUntil += 60
+            hoursUntil -= 1
+        }
+
+        if hoursUntil < 0 || (hoursUntil == 0 && minutesUntil <= 0) {
             hoursUntil += 24
         }
 
-        return TimeInterval(hoursUntil * 3600)
+        return TimeInterval(hoursUntil * 3600 + minutesUntil * 60)
     }
 
     private func ping(accessToken: String) async {

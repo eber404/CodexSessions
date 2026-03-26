@@ -16,6 +16,7 @@ final class AppModel: ObservableObject {
         static let launchAtLoginEnabled = "settings.launchAtLoginEnabled"
         static let keepAliveEnabled = "settings.keepAliveEnabled"
         static let firstHour = "settings.firstHour"
+        static let firstMinute = "settings.firstMinute"
     }
 
     private static let defaultRefreshIntervalSeconds: TimeInterval = 300
@@ -30,6 +31,7 @@ final class AppModel: ObservableObject {
     @Published var isSignedOut: Bool = false
     @Published var keepAliveEnabled: Bool = false
     @Published var firstHour: Int = 9
+    @Published var firstMinute: Int = 0
 
     let tokenStore: KeychainTokenStore
     let coordinator: RefreshCoordinator
@@ -78,6 +80,9 @@ final class AppModel: ObservableObject {
         if userDefaults.object(forKey: PreferenceKey.firstHour) != nil {
             firstHour = userDefaults.integer(forKey: PreferenceKey.firstHour)
         }
+        if userDefaults.object(forKey: PreferenceKey.firstMinute) != nil {
+            firstMinute = userDefaults.integer(forKey: PreferenceKey.firstMinute)
+        }
     }
 
     func updateRefreshInterval() {
@@ -94,6 +99,7 @@ final class AppModel: ObservableObject {
         let client = ChatCompletionClient()
         sessionKeepAlive = SessionKeepAlive(client: client)
         keepAliveTask = Task {
+            await sessionKeepAlive?.configure(isEnabled: true, firstHour: firstHour, firstMinute: firstMinute)
             let resolver = AuthResolver(discovery: AuthDiscovery(), tokenStore: tokenStore)
             let source = try? resolver.resolve(preferredPath: preferredAuthPath.isEmpty ? nil : preferredAuthPath)
             guard !Task.isCancelled, let source = source, let token = try? await tokenProvider.accessToken(for: source) else { return }
@@ -127,6 +133,15 @@ final class AppModel: ObservableObject {
     func setFirstHour(_ hour: Int) {
         firstHour = hour
         userDefaults.set(hour, forKey: PreferenceKey.firstHour)
+
+        if keepAliveEnabled {
+            startSessionKeepAlive()
+        }
+    }
+
+    func setFirstMinute(_ minute: Int) {
+        firstMinute = minute
+        userDefaults.set(minute, forKey: PreferenceKey.firstMinute)
 
         if keepAliveEnabled {
             startSessionKeepAlive()
