@@ -102,7 +102,7 @@ struct MenuContentView: View {
                     .foregroundStyle(.secondary)
             }
             ProgressView(value: ratio)
-            Text("Resets at \(window.resetAt.formatted(date: .abbreviated, time: .shortened))")
+            Text("Reset: \(window.resetAt.formatted(date: .abbreviated, time: .shortened))")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
