@@ -71,20 +71,6 @@ public struct SessionTimelineViewWithMinutes: View {
                                 .font(.system(size: 11, weight: .medium))
                                 .foregroundColor(block.state == .future ? .secondary : .white)
                         }
-
-                        if block.state == .past {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 10))
-                                .foregroundColor(.green)
-                        } else if block.state == .current {
-                            Image(systemName: "circle.fill")
-                                .font(.system(size: 8))
-                                .foregroundColor(.green)
-                        } else {
-                            Circle()
-                                .fill(Color.gray.opacity(0.3))
-                                .frame(width: 8, height: 8)
-                        }
                     }
 
                     if !isLast {
