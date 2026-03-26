@@ -75,7 +75,7 @@ public final class SessionScheduler {
             currentHour = (currentHour + intervalHours) % 24
         }
 
-        return intervals.sorted()
+        return intervals
     }
 
     public func calculateNextPing(firstHour: Int) -> Date {
