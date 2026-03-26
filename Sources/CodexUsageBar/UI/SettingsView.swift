@@ -15,8 +15,8 @@ struct SettingsView: View {
     private static let hoursInDay: ClosedRange<Double> = 0...23
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            sectionBlock(title: "Refresh Interval (minutes)") {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionBlock(title: "Refresh Interval") {
                 Picker("", selection: $refreshMinutes) {
                     Text("1 min").tag(1)
                     Text("3 min").tag(3)
@@ -30,8 +30,6 @@ struct SettingsView: View {
             }
 
             Divider()
-                .padding(.horizontal, 2)
-                .opacity(0.7)
 
             sectionBlock(title: "System") {
                 Toggle(
@@ -44,61 +42,62 @@ struct SettingsView: View {
             }
 
             Divider()
-                .padding(.horizontal, 2)
-                .opacity(0.7)
 
-            Section {
+            sectionBlock(title: "Session Keep-Alive") {
                 Toggle("Enable Session Keep-Alive", isOn: Binding(
                     get: { model.keepAliveEnabled },
                     set: { model.setKeepAliveEnabled($0) }
                 ))
 
-                if model.keepAliveEnabled {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("First hour of day:")
-                            Text(String(format: "%02d:00", model.firstHour))
-                                .fontWeight(.semibold)
-                        }
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Text("First hour of day:")
+                        Spacer()
+                        Text(String(format: "%02d:00", model.firstHour))
+                            .fontWeight(.semibold)
+                    }
 
-                        Slider(
-                            value: Binding(
-                                get: { Double(model.firstHour) },
-                                set: { model.setFirstHour(Int($0)) }
-                            ),
-                            in: Self.hoursInDay,
-                            step: 1
-                        )
-                        .accessibilityLabel("First hour of day")
+                    Slider(
+                        value: Binding(
+                            get: { Double(model.firstHour) },
+                            set: { model.setFirstHour(Int($0)) }
+                        ),
+                        in: Self.hoursInDay,
+                        step: 1
+                    )
+                    .accessibilityLabel("First hour of day")
 
-                        let blocks = scheduler.calculateTimelineBlocks(firstHour: model.firstHour)
-                        SessionTimelineView(blocks: blocks, firstHour: model.firstHour)
+                    let blocks = scheduler.calculateTimelineBlocks(firstHour: model.firstHour)
+                    SessionTimelineView(blocks: blocks, firstHour: model.firstHour)
 
+                    if model.keepAliveEnabled {
                         let nextPing = scheduler.calculateNextPing(firstHour: model.firstHour)
                         Text("Next ping: \(timeFormatter.string(from: nextPing))")
                             .font(.caption)
                             .foregroundColor(.secondary)
+                    } else {
+                        Text("Keep-alive is off. Enable it to start automatic pings.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
                 }
-            } header: {
-                Text("Session Keep-Alive")
             }
 
+            Spacer()
+
             Divider()
-                .padding(.horizontal, 2)
-                .opacity(0.7)
 
             HStack {
-                Spacer(minLength: 0)
+                Spacer()
                 Button("Logout") {
                     onLogout()
                 }
-                Spacer(minLength: 0)
+                Spacer()
             }
             .padding(.vertical, 12)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(16)
+        .frame(width: 360)
         .onAppear {
             let minutes = Int(model.refreshIntervalSeconds / 60)
             refreshMinutes = [1, 3, 5].contains(minutes) ? minutes : 5
@@ -107,11 +106,10 @@ struct SettingsView: View {
 
     @ViewBuilder
     private func sectionBlock<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.headline)
             content()
         }
-        .padding(.vertical, 12)
     }
 }
