@@ -22,7 +22,7 @@ The app prioritizes fast visual feedback and minimal setup.
 - Keep Settings compact and focused on essentials.
 - Offer refresh interval presets of 1, 3, and 5 minutes.
 - Keep logout in Settings, not in the main menu action list.
-- Session Keep-Alive: configurable ping to keep Codex sessions active (Settings toggle, first-hour slider, 5h intervals).
+- Session Keep-Alive: configurable ping to keep Codex sessions active. User sets hour/minute schedule in Settings; pings fire every 5 hours starting from next interval.
 
 ## High-level architecture
 
