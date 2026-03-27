@@ -22,17 +22,18 @@ public actor SessionKeepAlive {
         stop()
         guard isEnabled else { return }
 
-        let hour = firstHour
-        let minute = firstMinute
+        let firstPingHour = firstHour
+        let firstPingMinute = firstMinute
         let intervalSeconds: TimeInterval = 5 * 60 * 60
 
         task = Task { [weak self] in
             guard let self else { return }
 
-            // Wait until first configured hour
-            let waitTime = await self.calculateWaitTime(to: hour, minute: minute)
+            // Calculate first ping time - find next 5h interval from now
+            let waitTime = await self.calculateNextIntervalTime(fromHour: firstPingHour, fromMinute: firstPingMinute)
             let waitHours = waitTime / 3600
-            print("SessionKeepAlive: Starting. First ping in \(waitHours) hours (at \(hour):\(String(format: "%02d", minute)))")
+            let waitMinutes = (waitTime.truncatingRemainder(dividingBy: 3600)) / 60
+            print("SessionKeepAlive: Starting. First ping in \(Int(waitHours))h \(Int(waitMinutes))m")
 
             try? await Task.sleep(nanoseconds: UInt64(waitTime * 1_000_000_000))
 
@@ -48,6 +49,58 @@ public actor SessionKeepAlive {
                 try? await Task.sleep(nanoseconds: UInt64(intervalSeconds * 1_000_000_000))
             }
         }
+    }
+
+    /// Calculate time until next 5-hour interval based on firstHour
+    /// Finds the next occurrence of (firstHour + n*5h) from now
+    private func calculateNextIntervalTime(fromHour: Int, fromMinute: Int) -> TimeInterval {
+        let calendar = Calendar.current
+        let now = Date()
+        let currentHour = calendar.component(.hour, from: now)
+        let currentMinute = calendar.component(.minute, from: now)
+        
+        // Calculate total minutes from midnight for current time and first hour
+        let currentTotalMinutes = currentHour * 60 + currentMinute
+        let firstTotalMinutes = fromHour * 60 + fromMinute
+        
+        // Find the next interval by adding 5h repeatedly
+        var nextTotalMinutes: Int
+        var daysToAdd = 0
+        
+        if firstTotalMinutes > currentTotalMinutes {
+            // First hour hasn't passed yet today
+            nextTotalMinutes = firstTotalMinutes
+        } else {
+            // First hour already passed, add 5h intervals until we find a future time
+            nextTotalMinutes = firstTotalMinutes
+            while nextTotalMinutes <= currentTotalMinutes {
+                nextTotalMinutes += 5 * 60
+            }
+            // If we've gone past midnight (24*60 = 1440), we need to add a day
+            if nextTotalMinutes >= 24 * 60 {
+                nextTotalMinutes -= 24 * 60
+                daysToAdd = 1
+            }
+        }
+        
+        // Convert back to hours and minutes
+        let nextHour = nextTotalMinutes / 60
+        let nextMinute = nextTotalMinutes % 60
+        
+        print("calculateNextInterval: current=\(currentHour):\(String(format: "%02d", currentMinute)), firstHour=\(fromHour):\(String(format: "%02d", fromMinute)), next=\(nextHour):\(String(format: "%02d", nextMinute)), daysToAdd=\(daysToAdd)")
+        
+        // Calculate actual wait time
+        var components = calendar.dateComponents([.year, .month, .day], from: now)
+        components.hour = nextHour
+        components.minute = nextMinute
+        components.second = 0
+        components.day! += daysToAdd
+        
+        guard let targetDate = calendar.date(from: components) else {
+            return 5 * 60 * 60 // fallback to 5 hours
+        }
+        
+        return targetDate.timeIntervalSince(now)
     }
 
     private func calculateWaitTime(to hour: Int, minute: Int) -> TimeInterval {
