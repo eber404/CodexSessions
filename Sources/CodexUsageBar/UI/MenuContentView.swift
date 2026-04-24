@@ -2,6 +2,33 @@ import CodexUsageCore
 import AppKit
 import SwiftUI
 
+enum UsageBarThresholdColor: Equatable {
+    case green
+    case orange
+    case red
+
+    static func forRatio(_ ratio: Double) -> Self {
+        if ratio >= 0.9 {
+            return .red
+        }
+        if ratio >= 0.8 {
+            return .orange
+        }
+        return .green
+    }
+
+    var swiftUIColor: Color {
+        switch self {
+        case .green:
+            return .green
+        case .orange:
+            return .orange
+        case .red:
+            return .red
+        }
+    }
+}
+
 struct MenuContentView: View {
     @ObservedObject var model: AppModel
     @ObservedObject var coordinator: RefreshCoordinator
@@ -102,6 +129,7 @@ struct MenuContentView: View {
                     .foregroundStyle(.secondary)
             }
             ProgressView(value: ratio)
+                .tint(UsageBarThresholdColor.forRatio(ratio).swiftUIColor)
             Text("Reset: \(window.resetAt.formatted(date: .abbreviated, time: .shortened))")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
