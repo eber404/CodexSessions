@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to CodexSessions are documented in this file.
+All notable changes to Codex Watch are documented in this file.
 
 ## [Unreleased]
 
@@ -43,7 +43,7 @@ All notable changes to CodexSessions are documented in this file.
 ## [1.0.0] - 2026-03-25
 
 ### Added
-- Initial stable release of CodexSessions menu bar app for OpenAI Codex usage visibility.
+- Initial stable release of Codex Watch menu bar app for OpenAI Codex usage visibility.
 - Source-aware auth status labels (OpenCode, Codex CLI, OpenAI OAuth).
 - Default-browser OAuth flow with localhost callback handling.
 - Animated gauge-style menu bar icon during refresh.

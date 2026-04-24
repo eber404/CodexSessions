@@ -13,8 +13,8 @@
 ### Task 1: Add failing lifecycle regression test
 
 **Files:**
-- Modify: `Tests/CodexSessionsTests/AppModelSettingsPersistenceTests.swift` or create targeted app-model test file if cleaner
-- Read: `Sources/CodexUsageBar/App/AppModel.swift`
+- Modify: `Tests/CodexWatchTests/AppModelSettingsPersistenceTests.swift` or create targeted app-model test file if cleaner
+- Read: `Sources/CodexWatch/App/AppModel.swift`
 
 **Step 1: Write failing test**
 
@@ -37,8 +37,8 @@ Expected: PASS.
 ### Task 2: Add failing keep-alive endpoint test
 
 **Files:**
-- Modify: `Tests/CodexUsageCoreTests/ChatCompletionClientTests.swift` or replace with new keep-alive client tests
-- Modify/Create: `Sources/CodexUsageCore/Networking/*KeepAlive*Client*.swift`
+- Modify: `Tests/CodexWatchCoreTests/ChatCompletionClientTests.swift` or replace with new keep-alive client tests
+- Modify/Create: `Sources/CodexWatchCore/Networking/*KeepAlive*Client*.swift`
 
 **Step 1: Write failing test**
 
@@ -61,8 +61,8 @@ Expected: PASS.
 ### Task 3: Add failing status-detail test
 
 **Files:**
-- Modify: `Tests/CodexUsageCoreTests/*KeepAlive*Tests.swift`
-- Modify: `Sources/CodexUsageCore/Networking/*KeepAlive*Client*.swift`
+- Modify: `Tests/CodexWatchCoreTests/*KeepAlive*Tests.swift`
+- Modify: `Sources/CodexWatchCore/Networking/*KeepAlive*Client*.swift`
 
 **Step 1: Write failing test**
 
@@ -85,9 +85,9 @@ Expected: PASS.
 ### Task 4: Refresh token per ping
 
 **Files:**
-- Modify: `Sources/CodexUsageCore/Refresh/SessionKeepAlive.swift`
-- Modify: `Sources/CodexUsageBar/App/AppModel.swift`
-- Test: `Tests/CodexUsageCoreTests/SessionKeepAliveTests.swift`
+- Modify: `Sources/CodexWatchCore/Refresh/SessionKeepAlive.swift`
+- Modify: `Sources/CodexWatch/App/AppModel.swift`
+- Test: `Tests/CodexWatchCoreTests/SessionKeepAliveTests.swift`
 
 **Step 1: Write failing test**
 
@@ -110,9 +110,9 @@ Expected: PASS.
 ### Task 5: Verify targeted suite
 
 **Files:**
-- Test: `Tests/CodexUsageCoreTests/SessionKeepAliveTests.swift`
-- Test: `Tests/CodexUsageCoreTests/*KeepAlive*Tests.swift`
-- Test: `Tests/CodexSessionsTests/*AppModel*Tests.swift`
+- Test: `Tests/CodexWatchCoreTests/SessionKeepAliveTests.swift`
+- Test: `Tests/CodexWatchCoreTests/*KeepAlive*Tests.swift`
+- Test: `Tests/CodexWatchTests/*AppModel*Tests.swift`
 
 **Step 1: Run focused tests**
 

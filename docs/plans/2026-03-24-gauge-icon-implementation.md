@@ -13,8 +13,8 @@
 ### Task 1: Introduce ring layout metadata with tests
 
 **Files:**
-- Modify: `Tests/CodexUsageCoreTests/IconRendererTests.swift`
-- Modify: `Sources/CodexUsageCore/UI/IconRenderer.swift`
+- Modify: `Tests/CodexWatchCoreTests/IconRendererTests.swift`
+- Modify: `Sources/CodexWatchCore/UI/IconRenderer.swift`
 
 **Step 1: Write the failing test**
 
@@ -69,14 +69,14 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-git add Tests/CodexUsageCoreTests/IconRendererTests.swift Sources/CodexUsageCore/UI/IconRenderer.swift
+git add Tests/CodexWatchCoreTests/IconRendererTests.swift Sources/CodexWatchCore/UI/IconRenderer.swift
 git commit -m "feat: render menu icon as dual-ring gauge"
 ```
 
 ### Task 2: Draw dual-ring gauge image and verify build
 
 **Files:**
-- Modify: `Sources/CodexUsageCore/UI/IconRenderer.swift`
+- Modify: `Sources/CodexWatchCore/UI/IconRenderer.swift`
 
 **Step 1: Write the failing test**
 
@@ -117,6 +117,6 @@ Expected: PASS and build succeeds.
 **Step 5: Commit**
 
 ```bash
-git add Sources/CodexUsageCore/UI/IconRenderer.swift Tests/CodexUsageCoreTests/IconRendererTests.swift
+git add Sources/CodexWatchCore/UI/IconRenderer.swift Tests/CodexWatchCoreTests/IconRendererTests.swift
 git commit -m "refactor: replace bar geometry with ring geometry"
 ```

@@ -6,7 +6,7 @@
 
 **Architecture:** SessionScheduler calculates intervals; SessionTimelineView renders 24h timeline; AppModel manages settings and enables/disables keep-alive; SessionKeepAlive respects isEnabled flag.
 
-**Tech Stack:** Swift, SwiftUI (for timeline), existing CodexUsageCore components
+**Tech Stack:** Swift, SwiftUI (for timeline), existing CodexWatchCore components
 
 ---
 
@@ -15,15 +15,15 @@
 Calculates session intervals and timeline blocks.
 
 **Files:**
-- Create: `Sources/CodexUsageCore/Refresh/SessionScheduler.swift`
-- Test: `Tests/CodexUsageCoreTests/SessionSchedulerTests.swift`
+- Create: `Sources/CodexWatchCore/Refresh/SessionScheduler.swift`
+- Test: `Tests/CodexWatchCoreTests/SessionSchedulerTests.swift`
 
 **Step 1: Write the failing test**
 
 ```swift
-// Tests/CodexUsageCoreTests/SessionSchedulerTests.swift
+// Tests/CodexWatchCoreTests/SessionSchedulerTests.swift
 import XCTest
-@testable import CodexUsageCore
+@testable import CodexWatchCore
 
 final class SessionSchedulerTests: XCTestCase {
     func testCalculateIntervalsFirstHour9() {
@@ -57,7 +57,7 @@ Expected: FAIL - "Cannot find type SessionScheduler"
 **Step 3: Write minimal implementation**
 
 ```swift
-// Sources/CodexUsageCore/Refresh/SessionScheduler.swift
+// Sources/CodexWatchCore/Refresh/SessionScheduler.swift
 import Foundation
 
 public struct TimeBlock: Identifiable {
@@ -155,7 +155,7 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-git add Sources/CodexUsageCore/Refresh/SessionScheduler.swift Tests/CodexUsageCoreTests/SessionSchedulerTests.swift
+git add Sources/CodexWatchCore/Refresh/SessionScheduler.swift Tests/CodexWatchCoreTests/SessionSchedulerTests.swift
 git commit -m "feat: add SessionScheduler for interval calculations"
 ```
 
@@ -166,15 +166,15 @@ git commit -m "feat: add SessionScheduler for interval calculations"
 SwiftUI view showing 24h timeline with 5h blocks.
 
 **Files:**
-- Create: `Sources/CodexUsageBar/UI/SessionTimelineView.swift`
-- Test: `Tests/CodexUsageCoreTests/SessionTimelineViewTests.swift`
+- Create: `Sources/CodexWatch/UI/SessionTimelineView.swift`
+- Test: `Tests/CodexWatchCoreTests/SessionTimelineViewTests.swift`
 
 **Step 1: Write the failing test**
 
 ```swift
-// Tests/CodexUsageCoreTests/SessionTimelineViewTests.swift
+// Tests/CodexWatchCoreTests/SessionTimelineViewTests.swift
 import XCTest
-@testable import CodexUsageBar
+@testable import CodexWatch
 
 final class SessionTimelineViewTests: XCTestCase {
     func testTimelineRendersBlocks() {
@@ -195,7 +195,7 @@ Expected: FAIL - "Cannot find type SessionTimelineView"
 **Step 3: Write minimal implementation**
 
 ```swift
-// Sources/CodexUsageBar/UI/SessionTimelineView.swift
+// Sources/CodexWatch/UI/SessionTimelineView.swift
 import SwiftUI
 
 public struct SessionTimelineView: View {
@@ -253,7 +253,7 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-git add Sources/CodexUsageBar/UI/SessionTimelineView.swift Tests/CodexUsageCoreTests/SessionTimelineViewTests.swift
+git add Sources/CodexWatch/UI/SessionTimelineView.swift Tests/CodexWatchCoreTests/SessionTimelineViewTests.swift
 git commit -m "feat: add SessionTimelineView for visual timeline"
 ```
 
@@ -264,7 +264,7 @@ git commit -m "feat: add SessionTimelineView for visual timeline"
 Add keepAliveEnabled, firstHour properties and settings persistence.
 
 **Files:**
-- Modify: `Sources/CodexUsageBar/App/AppModel.swift`
+- Modify: `Sources/CodexWatch/App/AppModel.swift`
 
 **Step 1: Add new properties**
 
@@ -344,7 +344,7 @@ Run: `swift test`
 **Step 6: Commit**
 
 ```bash
-git add Sources/CodexUsageBar/App/AppModel.swift
+git add Sources/CodexWatch/App/AppModel.swift
 git commit -m "feat: add keepAliveEnabled and firstHour settings to AppModel"
 ```
 
@@ -355,11 +355,11 @@ git commit -m "feat: add keepAliveEnabled and firstHour settings to AppModel"
 Integrate toggle, slider, and timeline into Settings.
 
 **Files:**
-- Modify: `Sources/CodexUsageBar/UI/SettingsView.swift`
+- Modify: `Sources/CodexWatch/UI/SettingsView.swift`
 
 **Step 1: Read current SettingsView**
 
-Run: `cat Sources/CodexUsageBar/UI/SettingsView.swift`
+Run: `cat Sources/CodexWatch/UI/SettingsView.swift`
 
 **Step 2: Add Keep-Alive section**
 
@@ -416,7 +416,7 @@ Run: `swift test`
 **Step 4: Commit**
 
 ```bash
-git add Sources/CodexUsageBar/UI/SettingsView.swift
+git add Sources/CodexWatch/UI/SettingsView.swift
 git commit -m "feat: add keep-alive settings UI with toggle, slider, and timeline"
 ```
 
@@ -427,7 +427,7 @@ git commit -m "feat: add keep-alive settings UI with toggle, slider, and timelin
 Add isEnabled flag and firstHour parameter.
 
 **Files:**
-- Modify: `Sources/CodexUsageCore/Refresh/SessionKeepAlive.swift`
+- Modify: `Sources/CodexWatchCore/Refresh/SessionKeepAlive.swift`
 
 **Step 1: Update SessionKeepAlive**
 
@@ -505,7 +505,7 @@ Run: `swift test --filter SessionKeepAlive`
 **Step 3: Commit**
 
 ```bash
-git add Sources/CodexUsageCore/Refresh/SessionKeepAlive.swift
+git add Sources/CodexWatchCore/Refresh/SessionKeepAlive.swift
 git commit -m "feat: update SessionKeepAlive with isEnabled and firstHour support"
 ```
 
@@ -527,10 +527,10 @@ Run: `swift test`
 
 | File | Action |
 |------|--------|
-| `Sources/CodexUsageCore/Refresh/SessionScheduler.swift` | Create |
-| `Sources/CodexUsageBar/UI/SessionTimelineView.swift` | Create |
-| `Sources/CodexUsageBar/App/AppModel.swift` | Modify |
-| `Sources/CodexUsageBar/UI/SettingsView.swift` | Modify |
-| `Sources/CodexUsageCore/Refresh/SessionKeepAlive.swift` | Modify |
-| `Tests/CodexUsageCoreTests/SessionSchedulerTests.swift` | Create |
-| `Tests/CodexUsageCoreTests/SessionTimelineViewTests.swift` | Create |
+| `Sources/CodexWatchCore/Refresh/SessionScheduler.swift` | Create |
+| `Sources/CodexWatch/UI/SessionTimelineView.swift` | Create |
+| `Sources/CodexWatch/App/AppModel.swift` | Modify |
+| `Sources/CodexWatch/UI/SettingsView.swift` | Modify |
+| `Sources/CodexWatchCore/Refresh/SessionKeepAlive.swift` | Modify |
+| `Tests/CodexWatchCoreTests/SessionSchedulerTests.swift` | Create |
+| `Tests/CodexWatchCoreTests/SessionTimelineViewTests.swift` | Create |

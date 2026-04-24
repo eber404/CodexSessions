@@ -1,8 +1,8 @@
-# CodexSessions - AGENTS
+# Codex Watch - AGENTS
 
 ## Vision
 
-CodexSessions is a lightweight macOS menu bar app that shows OpenAI Codex usage windows at a glance.
+Codex Watch is a lightweight macOS menu bar app that shows OpenAI Codex usage windows at a glance.
 The app prioritizes fast visual feedback and minimal setup.
 
 ## Scope
@@ -27,13 +27,13 @@ The app prioritizes fast visual feedback and minimal setup.
 
 ## High-level architecture
 
-- `CodexUsageCore`
+- `CodexWatchCore`
   - Auth source discovery
   - Access token resolution and refresh handling
   - Usage request and parsing (`/backend-api/wham/usage`)
   - Refresh coordination and state modeling
 
-- `CodexSessions` executable target
+- `CodexWatch` executable target
   - App lifecycle and menu bar wiring
   - Menu content and settings UI
   - OAuth interaction flow

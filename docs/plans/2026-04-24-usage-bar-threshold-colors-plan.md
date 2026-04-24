@@ -13,8 +13,8 @@
 ### Task 1: Add failing threshold mapping test
 
 **Files:**
-- Create or modify: `Tests/CodexSessionsTests/*UsageBar*Tests.swift` or nearest view test file
-- Modify: `Sources/CodexUsageBar/UI/MenuContentView.swift`
+- Create or modify: `Tests/CodexWatchTests/*UsageBar*Tests.swift` or nearest view test file
+- Modify: `Sources/CodexWatch/UI/MenuContentView.swift`
 
 **Step 1: Write the failing test**
 
@@ -41,7 +41,7 @@ Expected: PASS.
 ### Task 2: Apply tint to progress bar
 
 **Files:**
-- Modify: `Sources/CodexUsageBar/UI/MenuContentView.swift`
+- Modify: `Sources/CodexWatch/UI/MenuContentView.swift`
 
 **Step 1: Write minimal UI change**
 
@@ -85,7 +85,7 @@ Expected: build succeeds.
 **Step 1: Commit once verified**
 
 ```bash
-git add Sources/CodexUsageBar/UI/MenuContentView.swift Tests/CodexSessionsTests/*UsageBar*Tests.swift docs/plans/2026-04-24-usage-bar-threshold-colors-design.md docs/plans/2026-04-24-usage-bar-threshold-colors-plan.md
+git add Sources/CodexWatch/UI/MenuContentView.swift Tests/CodexWatchTests/*UsageBar*Tests.swift docs/plans/2026-04-24-usage-bar-threshold-colors-design.md docs/plans/2026-04-24-usage-bar-threshold-colors-plan.md
 git commit -m "ui: add threshold colors to usage bars"
 ```
 

@@ -1,6 +1,6 @@
-# CodexSessions
+# Codex Watch
 
-CodexSessions is a lightweight macOS menu bar app that shows OpenAI Codex usage windows at a glance.
+Codex Watch is a lightweight macOS menu bar app that shows OpenAI Codex usage windows at a glance.
 
 ## What the app does
 
@@ -11,7 +11,7 @@ CodexSessions is a lightweight macOS menu bar app that shows OpenAI Codex usage 
 
 ## Authentication model
 
-CodexSessions resolves auth in this order:
+Codex Watch resolves auth in this order:
 
 1. Local auth files (Codex/OpenCode)
 2. OpenAI OAuth fallback

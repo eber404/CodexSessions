@@ -13,7 +13,7 @@
 ### Task 1: Add persisted settings plumbing in AppModel
 
 **Files:**
-- Modify: `Sources/CodexUsageBar/App/AppModel.swift`
+- Modify: `Sources/CodexWatch/App/AppModel.swift`
 
 **Step 1: Write failing test**
 
@@ -40,7 +40,7 @@ Commit with focused message after verification.
 ### Task 2: Bind SettingsView to persisted model values
 
 **Files:**
-- Modify: `Sources/CodexUsageBar/UI/SettingsView.swift`
+- Modify: `Sources/CodexWatch/UI/SettingsView.swift`
 
 **Step 1: Write failing test**
 
@@ -66,7 +66,7 @@ Commit with focused message after verification.
 
 **Files:**
 - Modify: `Package.swift`
-- Create: `Tests/CodexSessionsTests/AppModelSettingsPersistenceTests.swift`
+- Create: `Tests/CodexWatchTests/AppModelSettingsPersistenceTests.swift`
 
 **Step 1: Write the failing test**
 

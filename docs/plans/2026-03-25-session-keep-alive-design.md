@@ -75,7 +75,7 @@ SessionScheduler (nova)
 
 ### 1. SessionScheduler
 
-**File:** `Sources/CodexUsageCore/Refresh/SessionScheduler.swift` (novo)
+**File:** `Sources/CodexWatchCore/Refresh/SessionScheduler.swift` (novo)
 
 ```swift
 public struct TimeBlock: Identifiable {
@@ -95,7 +95,7 @@ public final class SessionScheduler {
 
 ### 2. SessionTimelineView
 
-**File:** `Sources/CodexUsageBar/UI/SessionTimelineView.swift` (novo)
+**File:** `Sources/CodexWatch/UI/SessionTimelineView.swift` (novo)
 
 - SwiftUI View
 - Timeline 24h horizontal
@@ -159,9 +159,9 @@ UserDefaults:
 
 | Arquivo | Ação |
 |---------|------|
-| `Sources/CodexUsageCore/Refresh/SessionScheduler.swift` | Criar |
-| `Sources/CodexUsageBar/UI/SessionTimelineView.swift` | Criar |
-| `Sources/CodexUsageBar/UI/SettingsView.swift` | Modificar |
-| `Sources/CodexUsageBar/App/AppModel.swift` | Modificar |
-| `Tests/CodexUsageCoreTests/SessionSchedulerTests.swift` | Criar |
-| `Tests/CodexUsageCoreTests/SessionTimelineViewTests.swift` | Criar |
+| `Sources/CodexWatchCore/Refresh/SessionScheduler.swift` | Criar |
+| `Sources/CodexWatch/UI/SessionTimelineView.swift` | Criar |
+| `Sources/CodexWatch/UI/SettingsView.swift` | Modificar |
+| `Sources/CodexWatch/App/AppModel.swift` | Modificar |
+| `Tests/CodexWatchCoreTests/SessionSchedulerTests.swift` | Criar |
+| `Tests/CodexWatchCoreTests/SessionTimelineViewTests.swift` | Criar |

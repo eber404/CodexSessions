@@ -2,25 +2,25 @@
 import PackageDescription
 
 let package = Package(
-    name: "codex-usage",
+    name: "codex-watch",
     platforms: [
         .macOS(.v14),
     ],
     products: [
-        .library(name: "CodexUsageCore", targets: ["CodexUsageCore"]),
-        .executable(name: "CodexSessions", targets: ["CodexSessions"]),
+        .library(name: "CodexWatchCore", targets: ["CodexWatchCore"]),
+        .executable(name: "CodexWatch", targets: ["CodexWatch"]),
     ],
     targets: [
-        .target(name: "CodexUsageCore"),
+        .target(name: "CodexWatchCore"),
         .executableTarget(
-            name: "CodexSessions",
-            dependencies: ["CodexUsageCore"],
-            path: "Sources/CodexUsageBar",
+            name: "CodexWatch",
+            dependencies: ["CodexWatchCore"],
+            path: "Sources/CodexWatch",
             linkerSettings: [
                 .unsafeFlags(["-Xlinker", "-interposable"], .when(configuration: .debug)),
             ]
         ),
-        .testTarget(name: "CodexUsageCoreTests", dependencies: ["CodexUsageCore", "CodexSessions"]),
-        .testTarget(name: "CodexSessionsTests", dependencies: ["CodexSessions"]),
+        .testTarget(name: "CodexWatchCoreTests", dependencies: ["CodexWatchCore", "CodexWatch"]),
+        .testTarget(name: "CodexWatchTests", dependencies: ["CodexWatch"]),
     ]
 )
