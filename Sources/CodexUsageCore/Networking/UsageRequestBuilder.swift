@@ -4,7 +4,7 @@ public enum UsageRequestError: Error {
     case invalidURL
 }
 
-public struct UsageRequestBuilder {
+public struct UsageRequestBuilder: Sendable {
     public init() {}
 
     public func makeRequest(accessToken: String) throws -> URLRequest {

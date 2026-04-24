@@ -37,10 +37,30 @@ final class MockHTTPClient: HTTPClient, @unchecked Sendable {
 
 final class MockChatCompletionClient: ChatCompletionClientProtocol, @unchecked Sendable {
     public private(set) var pingCount = 0
+    public private(set) var receivedTokens: [String] = []
 
     public init() {}
 
     public func sendPing(accessToken: String) async throws {
         pingCount += 1
+        receivedTokens.append(accessToken)
+    }
+}
+
+actor MockKeepAliveClient: KeepAliveClientProtocol {
+    private var pingCountValue = 0
+    private var tokens: [String] = []
+
+    func sendPing(accessToken: String) async throws {
+        pingCountValue += 1
+        tokens.append(accessToken)
+    }
+
+    func receivedTokens() -> [String] {
+        tokens
+    }
+
+    func pingCount() -> Int {
+        pingCountValue
     }
 }

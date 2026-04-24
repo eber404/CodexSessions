@@ -39,19 +39,24 @@ final class AppModel: ObservableObject {
     private let oauthSession: OpenAIOAuthSession
     private let userDefaults: UserDefaults
     private let loginItemManager: LoginItemManaging
-    private var sessionKeepAlive: SessionKeepAlive?
+    private let keepAliveFactory: (KeepAliveTokenProviding) -> SessionKeepAliveControlling
+    private var sessionKeepAlive: SessionKeepAliveControlling?
     private var keepAliveTask: Task<Void, Never>?
 
     init(
         tokenStore: KeychainTokenStore = KeychainTokenStore(),
         oauthSession: OpenAIOAuthSession = OpenAIOAuthSession(),
         userDefaults: UserDefaults = .standard,
-        loginItemManager: LoginItemManaging = LoginItemManager()
+        loginItemManager: LoginItemManaging = LoginItemManager(),
+        keepAliveFactory: @escaping (KeepAliveTokenProviding) -> SessionKeepAliveControlling = { tokenProvider in
+            SessionKeepAlive(client: KeepAliveClient(), tokenProvider: tokenProvider)
+        }
     ) {
         self.tokenStore = tokenStore
         self.oauthSession = oauthSession
         self.userDefaults = userDefaults
         self.loginItemManager = loginItemManager
+        self.keepAliveFactory = keepAliveFactory
         self.coordinator = RefreshCoordinator(service: EmptyUsageService())
     }
 
@@ -91,19 +96,28 @@ final class AppModel: ObservableObject {
         }
     }
 
-    private func startSessionKeepAlive() {
+    func startSessionKeepAlive() {
+        stopSessionKeepAlive()
         guard !isSignedOut, keepAliveEnabled else { return }
-        keepAliveTask?.cancel()
-        sessionKeepAlive = nil
+
         let tokenProvider = AccessTokenProvider(tokenStore: tokenStore, refresher: oauthSession)
-        let client = ChatCompletionClient()
-        sessionKeepAlive = SessionKeepAlive(client: client)
+        let resolver = AuthResolver(discovery: AuthDiscovery(), tokenStore: tokenStore)
+        let source = try? resolver.resolve(preferredPath: preferredAuthPath.isEmpty ? nil : preferredAuthPath)
+        guard let source else { return }
+
+        let keepAliveTokenProvider = SourceBackedKeepAliveTokenProvider(source: source, tokenProvider: tokenProvider)
+        startSessionKeepAlive(tokenProvider: keepAliveTokenProvider)
+    }
+
+    func startSessionKeepAlive(tokenProvider: KeepAliveTokenProviding) {
+        stopSessionKeepAlive()
+        guard !isSignedOut, keepAliveEnabled else { return }
+
+        let keepAlive = keepAliveFactory(tokenProvider)
+        sessionKeepAlive = keepAlive
         keepAliveTask = Task {
-            await sessionKeepAlive?.configure(isEnabled: true, firstHour: firstHour, firstMinute: firstMinute)
-            let resolver = AuthResolver(discovery: AuthDiscovery(), tokenStore: tokenStore)
-            let source = try? resolver.resolve(preferredPath: preferredAuthPath.isEmpty ? nil : preferredAuthPath)
-            guard !Task.isCancelled, let source = source, let token = try? await tokenProvider.accessToken(for: source) else { return }
-            await sessionKeepAlive?.start(accessToken: token)
+            await keepAlive.configure(isEnabled: true, firstHour: firstHour, firstMinute: firstMinute)
+            await keepAlive.start()
         }
     }
 
@@ -151,7 +165,13 @@ final class AppModel: ObservableObject {
     private func stopSessionKeepAlive() {
         keepAliveTask?.cancel()
         keepAliveTask = nil
+        let currentKeepAlive = sessionKeepAlive
         sessionKeepAlive = nil
+        if let currentKeepAlive {
+            Task {
+                await currentKeepAlive.stop()
+            }
+        }
     }
 
     func rebuildServiceAndRefresh() {
@@ -238,6 +258,20 @@ final class AppModel: ObservableObject {
         authMessage = nil
         lastManualRefreshAt = nil
         rebuildServiceAndRefresh()
+    }
+}
+
+private actor SourceBackedKeepAliveTokenProvider: KeepAliveTokenProviding {
+    private let source: AuthSource
+    private let tokenProvider: AccessTokenProviding
+
+    init(source: AuthSource, tokenProvider: AccessTokenProviding) {
+        self.source = source
+        self.tokenProvider = tokenProvider
+    }
+
+    func accessToken() async throws -> String {
+        try await tokenProvider.accessToken(for: source)
     }
 }
 

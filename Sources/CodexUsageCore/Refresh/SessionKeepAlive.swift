@@ -1,15 +1,27 @@
 import Foundation
 
+public protocol KeepAliveTokenProviding: Sendable {
+    func accessToken() async throws -> String
+}
+
+public protocol SessionKeepAliveControlling: Actor {
+    func configure(isEnabled: Bool, firstHour: Int, firstMinute: Int) async
+    func start() async
+    func stop()
+}
+
 public actor SessionKeepAlive {
-    private let client: ChatCompletionClientProtocol
+    private let client: KeepAliveClientProtocol
+    private let tokenProvider: KeepAliveTokenProviding
     private let intervalHours = 5
     private var task: Task<Void, Never>?
     private var isEnabled: Bool = false
     private var firstHour: Int = 9
     private var firstMinute: Int = 0
 
-    public init(client: ChatCompletionClientProtocol) {
+    public init(client: KeepAliveClientProtocol, tokenProvider: KeepAliveTokenProviding) {
         self.client = client
+        self.tokenProvider = tokenProvider
     }
 
     public func configure(isEnabled: Bool, firstHour: Int, firstMinute: Int = 0) {
@@ -18,7 +30,7 @@ public actor SessionKeepAlive {
         self.firstMinute = firstMinute
     }
 
-    public func start(accessToken: String) {
+    public func start() {
         stop()
         guard isEnabled else { return }
 
@@ -42,7 +54,7 @@ public actor SessionKeepAlive {
             // After first ping, send every 5 hours
             while !Task.isCancelled {
                 print("SessionKeepAlive: Sending ping now")
-                await self.ping(accessToken: accessToken)
+                await self.ping()
 
                 print("SessionKeepAlive: Next ping in 5 hours")
                 guard !Task.isCancelled else { return }
@@ -147,8 +159,13 @@ public actor SessionKeepAlive {
         task != nil && !task!.isCancelled
     }
 
-    private func ping(accessToken: String) async {
+    public func pingForTesting() async {
+        await ping()
+    }
+
+    private func ping() async {
         do {
+            let accessToken = try await tokenProvider.accessToken()
             print("SessionKeepAlive: Calling client.sendPing with token length: \(accessToken.count)")
             try await client.sendPing(accessToken: accessToken)
             print("SessionKeepAlive: Ping successful!")
@@ -157,3 +174,5 @@ public actor SessionKeepAlive {
         }
     }
 }
+
+extension SessionKeepAlive: SessionKeepAliveControlling {}
